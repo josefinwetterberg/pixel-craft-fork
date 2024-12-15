@@ -7,3 +7,8 @@
 body {
 	height: 100svh;
 }
+
+canvas {
+	position: fixed;
+	inset: 0;
+}
