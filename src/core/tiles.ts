@@ -1,36 +1,42 @@
-import { Graphics } from 'pixi.js'
+import { Sprite, Texture } from 'pixi.js'
+import { TileCallback } from '../types'
 
 export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
 export const TILE_HEIGHT = 64
 export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
-export const TILE_COUNT = 128
+export const TILE_COUNT = 64
 
-export const drawTiles = (width: number, height: number) => {
-	const tiles: Graphics[] = []
+export const loopTiles = <T>(
+	width: number,
+	height: number,
+	callback: TileCallback<T>,
+	...args: any[]
+): T[] => {
+	const results: T[] = []
 
 	for (let row = 0 - height / 2; row < height / 2; row++) {
 		for (let col = 0 - width / 2; col < width / 2; col++) {
-			tiles.push(drawTile(row, col))
+			results.push(callback(row, col, ...args))
 		}
 	}
 
-	return tiles
+	return results
 }
 
-const drawTile = (row: number, col: number) => {
+export const drawTiles = (width: number, height: number, texture: Texture) => {
+	return loopTiles(width, height, createTexturedTile, texture)
+}
+
+const createTexturedTile = (row: number, col: number, texture: Texture) => {
 	const xPosTile = (col - row) * TILE_WIDTH_HALF
 	const yPosTile = (col + row) * TILE_HEIGHT_HALF
 
-	const tile = new Graphics()
+	const sprite = Sprite.from(texture)
+	sprite.width = TILE_WIDTH
+	sprite.height = TILE_HEIGHT
+	sprite.x = xPosTile
+	sprite.y = yPosTile
 
-	tile.moveTo(xPosTile + TILE_WIDTH_HALF, yPosTile) // Top point
-	tile.lineTo(xPosTile + TILE_WIDTH, yPosTile + TILE_HEIGHT_HALF) // Right point
-	tile.lineTo(xPosTile + TILE_WIDTH_HALF, yPosTile + TILE_HEIGHT) // Bottom point
-	tile.lineTo(xPosTile, yPosTile + TILE_HEIGHT_HALF) // Left point
-	tile.lineTo(xPosTile + TILE_WIDTH_HALF, yPosTile) // Back to top
-
-	tile.stroke('red')
-
-	return tile
+	return sprite
 }
