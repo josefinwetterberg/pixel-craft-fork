@@ -1,5 +1,5 @@
 import { Application, Assets, Container } from 'pixi.js'
-import { drawTiles, TILE_COUNT, TILE_WIDTH_HALF } from './core'
+import { TILE_COUNT, TILE_WIDTH_HALF, drawGroundTiles } from './core'
 
 const init = async () => {
 	const app = new Application()
@@ -13,9 +13,9 @@ const init = async () => {
 	/**
 	 * Ground
 	 */
-	const grassTexture = await Assets.load('/game/ground/grass_3.png')
+	const grassTexture = await Assets.load('/game/ground/grass.png')
 	const ground = new Container()
-	const tiles = drawTiles(TILE_COUNT, TILE_COUNT, grassTexture)
+	const tiles = drawGroundTiles(TILE_COUNT, TILE_COUNT, grassTexture)
 	ground.addChild(...tiles)
 	gameWorld.addChild(ground)
 	ground.x = -TILE_WIDTH_HALF + window.innerWidth / 2
