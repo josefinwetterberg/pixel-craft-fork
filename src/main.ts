@@ -1,5 +1,6 @@
 import { Application, Assets, Container } from 'pixi.js'
-import { TILE_COUNT, TILE_WIDTH_HALF, drawGroundTiles } from './core'
+import { centerContainerPositionToWindow, drawGroundTiles, TILE_COUNT } from './core'
+import { hasWindowResized } from './lib/utils'
 
 const init = async () => {
 	const app = new Application()
@@ -15,11 +16,15 @@ const init = async () => {
 	 */
 	const grassTexture = await Assets.load('/game/ground/grass.png')
 	const ground = new Container()
-	const tiles = drawGroundTiles(TILE_COUNT, TILE_COUNT, grassTexture)
-	ground.addChild(...tiles)
+	ground.addChild(...drawGroundTiles(TILE_COUNT, TILE_COUNT, grassTexture))
 	gameWorld.addChild(ground)
-	ground.x = -TILE_WIDTH_HALF + window.innerWidth / 2
-	ground.y = window.innerHeight / 2
+	centerContainerPositionToWindow(ground)
+
+	app.ticker.add(() => {
+		if (hasWindowResized()) {
+			centerContainerPositionToWindow(ground)
+		}
+	})
 }
 
 window.addEventListener('DOMContentLoaded', init)

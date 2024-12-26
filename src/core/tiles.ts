@@ -1,4 +1,4 @@
-import { Sprite, Texture } from 'pixi.js'
+import { Container } from 'pixi.js'
 import { TileCallback } from '../types'
 
 export const TILE_WIDTH = 128
@@ -19,23 +19,14 @@ export const loopTiles = <T>(width: number, height: number, callback: TileCallba
 	return results
 }
 
-const getIsometricTilePositions = (row: number, col: number) => {
+export const getIsometricTilePositions = (row: number, col: number) => {
 	const xPosTile = (col - row) * TILE_WIDTH_HALF
 	const yPosTile = (col + row) * TILE_HEIGHT_HALF
 
 	return { xPosTile, yPosTile }
 }
 
-export const drawGroundTiles = (width: number, height: number, texture: Texture) => {
-	return loopTiles(width, height, (row, col) => {
-		const { xPosTile, yPosTile } = getIsometricTilePositions(row, col)
-
-		const sprite = Sprite.from(texture)
-		sprite.width = TILE_WIDTH
-		sprite.height = TILE_HEIGHT
-		sprite.x = xPosTile
-		sprite.y = yPosTile
-
-		return sprite
-	})
+export const centerContainerPositionToWindow = (container: Container) => {
+	container.x = -TILE_WIDTH_HALF + window.innerWidth / 2
+	container.y = window.innerHeight / 2
 }
