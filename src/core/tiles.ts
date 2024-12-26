@@ -5,7 +5,7 @@ export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
 export const TILE_HEIGHT = 64
 export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
-export const TILE_COUNT = 16
+export const TILE_COUNT = 32
 
 export const loopTiles = <T>(width: number, height: number, callback: TileCallback<T>): T[] => {
 	const results: T[] = []
