@@ -4,7 +4,8 @@ import {
 	drawGroundTiles,
 	handleMovement,
 	setViewportMoveable,
-	TILE_COUNT
+	TILE_COUNT,
+	updateCameraMomentum
 } from './core'
 import { hasWindowResized } from './lib/utils'
 
@@ -35,6 +36,9 @@ const init = async () => {
 		if (hasWindowResized()) {
 			centerContainerPositionToWindow(ground)
 		}
+
+		// Only runs when there is a direction diff > 0
+		updateCameraMomentum(gameWorld)
 	})
 }
 
