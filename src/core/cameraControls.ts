@@ -91,12 +91,27 @@ export const updateCameraMomentum = (world: Container) => {
 
 export const handleCameraWheelZoom = (ev: FederatedWheelEvent, world: Container) => {
 	const zoomDelta = -ev.deltaY * CAMERA_ZOOM_SPEED
+	const oldScale = world.scale.x
 	const newScale = Math.min(
-		Math.max(world.scale.x + zoomDelta, MIN_CAMERA_ZOOM_LEVEL),
+		Math.max(oldScale + zoomDelta, MIN_CAMERA_ZOOM_LEVEL),
 		MAX_CAMERA_ZOOM_LEVEL
 	)
 
+	// Can't use ev position directly beacuse the world position does not allways sit on (0, 0)
+	const mouseX = ev.clientX - world.x
+	const mouseY = ev.clientY - world.y
+
+	// To keep the zoomed in point under the cursor we have to calculate how much
+	// the world have to move to compensate for the new scale.
+	// When zooming in = negative delta which moves the world left and up to compensate for scaling
+	// When zooming out = positive delta which moves the world right and down to compensate for scaling
+	// When new and old scale is the same i.e when MIN/MAX_CAMERA_ZOOM_LEVEL is the scale value the delta is 0 and does not change the transformation of the world position
+	const deltaX = mouseX * (1 - newScale / oldScale)
+	const deltaY = mouseY * (1 - newScale / oldScale)
+
 	world.scale.set(newScale)
+	world.x += deltaX
+	world.y += deltaY
 }
 
 const getPinchDistance = (pointers: ViewportPointerEvent[]) => {
