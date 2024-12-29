@@ -12,4 +12,5 @@ body {
 canvas {
 	position: fixed;
 	inset: 0;
+	user-select: none;
 }
