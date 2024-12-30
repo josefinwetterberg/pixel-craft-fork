@@ -124,8 +124,23 @@ const getPinchDistance = (pointers: ViewportPointerEvent[]) => {
 /**
  * TODO:
  * Relative zoom min/max values depending on the screen size
- * Targeted zoom position
  */
+
+const updatePointerEventPosition = (ev: FederatedPointerEvent) => {
+	const { clientX, clientY, pointerId, pointerType } = ev
+
+	return viewport.pointerEvents.map((event) => {
+		const updatedEv = { clientX, clientY, pointerId, pointerType }
+		return event.pointerId === ev.pointerId ? updatedEv : event
+	})
+}
+
+const getPinchCenterPoint = (pointers: ViewportPointerEvent[]) => {
+	const [pointerA, pointerB] = pointers
+	const centerX = (pointerA.clientX + pointerB.clientX) / 2
+	const centerY = (pointerA.clientY + pointerB.clientY) / 2
+	return { x: centerX, y: centerY }
+}
 
 export const handleCameraPinchZoom = (ev: FederatedPointerEvent, world: Container) => {
 	if (viewport.pointerEvents.length < 2 && isPinchZoomPointers()) {
@@ -143,14 +158,11 @@ export const handleCameraPinchZoom = (ev: FederatedPointerEvent, world: Containe
 		return
 	}
 
-	const { clientX, clientY, pointerId, pointerType } = ev
-	viewport.pointerEvents = viewport.pointerEvents.map((event) => {
-		const updatedEv = { clientX, clientY, pointerId, pointerType }
-		return event.pointerId === ev.pointerId ? updatedEv : event
-	})
+	viewport.pointerEvents = updatePointerEventPosition(ev)
 
 	const currentDistance = getPinchDistance(viewport.pointerEvents)
 	const zoomDelta = (currentDistance - viewport.initScaleDistance) * CAMERA_ZOOM_SPEED
+	const oldScale = world.scale.x
 	const newScale = Math.min(
 		Math.max(world.scale.x + zoomDelta, MIN_CAMERA_ZOOM_LEVEL),
 		MAX_CAMERA_ZOOM_LEVEL
@@ -158,5 +170,21 @@ export const handleCameraPinchZoom = (ev: FederatedPointerEvent, world: Containe
 
 	viewport.initScaleDistance = currentDistance
 
+	const centerPoint = getPinchCenterPoint(viewport.pointerEvents)
+
+	// Can't use center point position directly beacuse the world position does not allways sit on (0, 0)
+	const pointX = centerPoint.x - world.x
+	const pointY = centerPoint.y - world.y
+
+	// To keep the zoomed in point under the center point of the pinch points we have to calculate how much
+	// the world have to move to compensate for the new scale.
+	// When zooming in = negative delta which moves the world left and up to compensate for scaling
+	// When zooming out = positive delta which moves the world right and down to compensate for scaling
+	// When new and old scale is the same i.e when MIN/MAX_CAMERA_ZOOM_LEVEL is the scale value the delta is 0 and does not change the transformation of the world position
+	const deltaX = pointX * (1 - newScale / oldScale)
+	const deltaY = pointY * (1 - newScale / oldScale)
+
 	world.scale.set(newScale)
+	world.x += deltaX
+	world.y += deltaY
 }
