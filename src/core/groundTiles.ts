@@ -44,7 +44,6 @@ export const setGroundRenderableForInView = (containers: Container[]) => {
 	}
 
 	for (const container of containers) {
-		console.log('first')
 		container.renderable = isContainerWithInView(container, boundaries)
 	}
 }
