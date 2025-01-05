@@ -8,6 +8,7 @@ export const CAMERA_ZOOM_LEVELS = {
 	md: { min: 0.5, max: 1.25 },
 	lg: { min: 0.75, max: 1.5 }
 }
+// TODO - add ticker delta to have the same speed for different fps
 export const CAMERA_ZOOM_WHEEL_SPEED = 0.001
 export const CAMERA_ZOOM_PINCH_SPEED = 0.0025
 
@@ -19,6 +20,11 @@ export const viewport: Viewport = {
 	initScaleDistance: 0,
 	isMoveable: false,
 	pointerEvents: []
+}
+
+export const cloneGroundPosToViewport = (ground: Container) => {
+	viewport.x = ground.x
+	viewport.y = ground.y
 }
 
 const isPinchZoomPointers = () => {
@@ -71,14 +77,14 @@ export const handlePointerMove = (ev: FederatedPointerEvent, world: Container) =
 	viewport.y = clientY
 }
 
-const hasMovement = () => viewport.dx !== 0 && viewport.dy !== 0
+export const hasCameraMovement = () => viewport.dx !== 0 && viewport.dy !== 0
 
 const isAboveThreshold = () => {
 	return Math.abs(viewport.dx) > VELOCITY_THRESHOLD || Math.abs(viewport.dy) > VELOCITY_THRESHOLD
 }
 
 export const updateCameraMomentum = (world: Container) => {
-	if (!hasMovement()) return
+	if (!hasCameraMovement()) return
 
 	// To avoid dampning on very small numbers, we check if is above the threshold
 	if (isAboveThreshold()) {

@@ -8,7 +8,11 @@ import {
 	handlePointerUp,
 	TILE_COUNT,
 	updateCameraMomentum,
-	handleCameraPinchZoom
+	handleCameraPinchZoom,
+	shouldRecalculateRenderable,
+	cloneGroundPosToViewport,
+	setInitalPrevRenderPos,
+	setGroundRenderableForInView
 } from './core'
 import { hasWindowResized } from './lib/utils'
 
@@ -31,11 +35,20 @@ const init = async () => {
 
 	const ground = new Container({ children: await drawGroundTiles(TILE_COUNT, TILE_COUNT) })
 	centerContainerPositionToWindow(ground)
+	cloneGroundPosToViewport(ground)
+	setInitalPrevRenderPos(ground)
 	gameWorld.addChild(ground)
+
+	setGroundRenderableForInView(ground.children)
 
 	app.ticker.add(() => {
 		if (hasWindowResized()) {
 			centerContainerPositionToWindow(ground)
+			cloneGroundPosToViewport(ground)
+		}
+
+		if (shouldRecalculateRenderable(gameWorld.x, gameWorld.y, gameWorld.scale)) {
+			setGroundRenderableForInView(ground.children)
 		}
 
 		// Only runs when there is a direction diff > 0
