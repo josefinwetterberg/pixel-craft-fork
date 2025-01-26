@@ -6,7 +6,7 @@ export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
 export const TILE_HEIGHT = 64
 export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
-export const TILE_COUNT = 64
+export const TILE_COUNT = 32
 
 const prevRenderablePosition = { x: 0, y: 0 }
 let prevScale = 1
@@ -14,8 +14,8 @@ let prevScale = 1
 export const loopTiles = <T>(width: number, height: number, callback: TileCallback<T>): T[] => {
 	const results: T[] = []
 
-	for (let row = 0 - height / 2; row < height / 2; row++) {
-		for (let col = 0 - width / 2; col < width / 2; col++) {
+	for (let row = 0; row < height; row++) {
+		for (let col = 0; col < width; col++) {
 			results.push(callback(row, col))
 		}
 	}
@@ -36,8 +36,14 @@ export const getIsometricTilePositions = (
 }
 
 export const centerContainerPositionToWindow = (container: Container) => {
-	container.x = -TILE_WIDTH_HALF + window.innerWidth / 2
-	container.y = window.innerHeight / 2
+	const centerWindowX = window.innerWidth / 2
+	const centerWindowY = window.innerHeight / 2
+
+	const centerContainerX = container.width / 2
+	const centerContainerY = container.height / 2
+
+	container.x = centerWindowX - centerContainerX
+	container.y = centerWindowY - centerContainerY
 }
 
 export const isContainerWithInView = (container: Container, boundaries: Boundaries) => {

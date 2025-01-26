@@ -12,13 +12,18 @@ import {
 	shouldRecalculateRenderable,
 	cloneGroundPosToViewport,
 	setInitalPrevRenderPos,
-	setGroundRenderableForInView
+	setGroundRenderableForInView,
+	setCameraBorder
 } from './core'
 import { hasWindowResized } from './lib/utils'
 
 const init = async () => {
 	const app = new Application()
-	await app.init({ resizeTo: window, backgroundColor: '#141414' })
+	await app.init({
+		resizeTo: window,
+		backgroundColor: '#141414',
+		antialias: false
+	})
 	document.body.appendChild(app.canvas)
 	// @ts-ignore
 	globalThis.__PIXI_APP__ = app
@@ -27,7 +32,7 @@ const init = async () => {
 	gameWorld.on('pointerdown', (ev) => handlePointerDown(ev))
 	// event on window since a "pointerup" event can trigger if the pointer is out of the initial "pointerdown" container
 	window.addEventListener('pointerup', (ev) => handlePointerUp(ev))
-	gameWorld.on('pointermove', (ev) => handlePointerMove(ev, gameWorld))
+	gameWorld.on('pointermove', (ev) => handlePointerMove(ev, gameWorld, ground))
 	gameWorld.on('touchmove', (ev) => handleCameraPinchZoom(ev, gameWorld))
 	gameWorld.on('wheel', (ev) => handleCameraWheelZoom(ev, gameWorld))
 
@@ -40,6 +45,7 @@ const init = async () => {
 	gameWorld.addChild(ground)
 
 	setGroundRenderableForInView(ground.children)
+	setCameraBorder(ground)
 
 	app.ticker.add(() => {
 		if (hasWindowResized()) {
@@ -52,7 +58,7 @@ const init = async () => {
 		}
 
 		// Only runs when there is a direction diff > 0
-		updateCameraMomentum(gameWorld)
+		updateCameraMomentum(gameWorld, ground)
 	})
 }
 

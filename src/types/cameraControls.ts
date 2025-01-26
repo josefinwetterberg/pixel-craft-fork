@@ -5,6 +5,13 @@ export type ViewportPointerEvent = {
 	clientY: number
 }
 
+export type Border = {
+	x1: number
+	y1: number
+	x2: number
+	y2: number
+}
+
 export type Viewport = {
 	x: number
 	y: number
@@ -13,4 +20,5 @@ export type Viewport = {
 	initScaleDistance: number
 	isMoveable: boolean
 	pointerEvents: ViewportPointerEvent[]
+	border: Border
 }
