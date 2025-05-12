@@ -1,14 +1,14 @@
-# Pixel Farm
+# Pixel Craft
 
-A 2D isometric farming sumilator game.
+A 2D isometric open world game mode.
 
 ## Installation
 
 `Step 1:` Clone and install dependencies
 
 ```bash
-git clone https://github.com/WilliamDavidson-02/pixel-farm.git
-cd pixel-farm
+git clone https://github.com/WilliamDavidson-02/pixel-craft.git
+cd pixel-craft
 npm install
 ```
 
