@@ -6,6 +6,8 @@
 
 body {
 	height: 100svh;
+	max-height: 100svh;
+	overflow: hidden;
 	background: rgb(20, 20, 20);
 }
 

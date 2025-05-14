@@ -17,7 +17,6 @@ export type Viewport = {
 	y: number
 	dx: number
 	dy: number
-	initScaleDistance: number
 	isMoveable: boolean
 	pointerEvents: ViewportPointerEvent[]
 	border: Border

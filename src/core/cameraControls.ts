@@ -5,21 +5,12 @@ import { TILE_HEIGHT_HALF, TILE_WIDTH_HALF } from './tiles'
 
 export const MOMENTUM_FACTOR = 0.95 // Controls how quickly the movement slows down (0-1)
 export const VELOCITY_THRESHOLD = 0.01 // When to stop the movement completely
-export const CAMERA_ZOOM_LEVELS = {
-	sm: { min: 0.75, max: 0.75 },
-	md: { min: 0.75, max: 0.75 },
-	lg: { min: 0.75, max: 0.75 }
-}
-// TODO - add ticker delta to have the same speed for different fps
-export const CAMERA_ZOOM_WHEEL_SPEED = 0.001
-export const CAMERA_ZOOM_PINCH_SPEED = 0.0025
 
 export const viewport: Viewport = {
 	x: 0,
 	y: 0,
 	dx: 0,
 	dy: 0,
-	initScaleDistance: 0,
 	isMoveable: false,
 	pointerEvents: [],
 	border: { x1: 0, y1: 0, x2: 0, y2: 0 }
@@ -62,7 +53,6 @@ export const handlePointerUp = (ev: PointerEvent) => {
 		(event) => event.pointerId !== ev.pointerId
 	)
 	viewport.isMoveable = false
-	viewport.initScaleDistance = 0
 }
 
 export const setCameraBorder = (ground: Container) => {
@@ -132,110 +122,4 @@ export const updateCameraMomentum = (world: Container, ground: Container) => {
 	} else {
 		viewport.dx = viewport.dy = 0
 	}
-}
-
-const getZoomLevelByWindowSize = () => {
-	const { lg, md, sm } = CAMERA_ZOOM_LEVELS
-	return window.innerWidth <= 800 ? sm : window.innerWidth <= 1600 ? md : lg
-}
-
-const getNewZoomScale = (oldScale: number, zoomDelta: number) => {
-	const { min, max } = getZoomLevelByWindowSize()
-	return Math.min(Math.max(oldScale + zoomDelta, min), max)
-}
-
-// TODO: Check if the transformation is with in the viewport boders
-export const getZoomTransformatinoCompensation = (
-	pointX: number,
-	pointY: number,
-	newScale: number,
-	oldScale: number
-) => {
-	// To keep the zoomed in point under the cursor/pinch center point we have to calculate how much
-	// the world have to move to compensate for the new scale.
-	// When zooming in = negative delta which moves the world left and up to compensate for scaling
-	// When zooming out = positive delta which moves the world right and down to compensate for scaling
-	// When new and old scale is the same i.e when min/max zoom level is the scale value the delta is 0 and does not change the transformation of the world position
-	const deltaX = pointX * (1 - newScale / oldScale)
-	const deltaY = pointY * (1 - newScale / oldScale)
-	return { deltaX, deltaY }
-}
-
-export const handleCameraWheelZoom = (ev: FederatedWheelEvent, world: Container) => {
-	const zoomDelta = -ev.deltaY * CAMERA_ZOOM_WHEEL_SPEED
-	const oldScale = world.scale.x
-	const newScale = getNewZoomScale(oldScale, zoomDelta)
-
-	// Can't use ev position directly beacuse the world position does not allways sit on (0, 0)
-	const mouseX = ev.clientX - world.x
-	const mouseY = ev.clientY - world.y
-
-	const { deltaX, deltaY } = getZoomTransformatinoCompensation(mouseX, mouseY, newScale, oldScale)
-
-	world.scale.set(newScale)
-	world.x += deltaX
-	world.y += deltaY
-}
-
-const getPinchDistance = (pointers: ViewportPointerEvent[]) => {
-	const [pointerA, pointerB] = pointers
-	const dx = pointerA.clientX - pointerB.clientX
-	const dy = pointerA.clientY - pointerB.clientY
-	return Math.sqrt(dx * dx + dy * dy)
-}
-
-const updatePointerEventPosition = (ev: FederatedPointerEvent) => {
-	const { clientX, clientY, pointerId, pointerType } = ev
-
-	return viewport.pointerEvents.map((event) => {
-		const updatedEv = { clientX, clientY, pointerId, pointerType }
-		return event.pointerId === ev.pointerId ? updatedEv : event
-	})
-}
-
-const getPinchCenterPoint = (pointers: ViewportPointerEvent[]) => {
-	const [pointerA, pointerB] = pointers
-	const centerX = (pointerA.clientX + pointerB.clientX) / 2
-	const centerY = (pointerA.clientY + pointerB.clientY) / 2
-	return { x: centerX, y: centerY }
-}
-
-export const handleCameraPinchZoom = (ev: FederatedPointerEvent, world: Container) => {
-	if (viewport.pointerEvents.length < 2 && isPinchZoomPointers()) {
-		return
-	}
-
-	// If there is no inital scale distance the continuation of a zoom does not work
-	if (viewport.initScaleDistance === 0) {
-		viewport.initScaleDistance = getPinchDistance(viewport.pointerEvents)
-		return
-	}
-
-	const zoomLevel = getZoomLevelByWindowSize()
-
-	// scale.y is the same as scale.x, that is why we can only check one
-	if (world.scale.x > zoomLevel.max || world.scale.x < zoomLevel.min) {
-		return
-	}
-
-	viewport.pointerEvents = updatePointerEventPosition(ev)
-
-	const currentDistance = getPinchDistance(viewport.pointerEvents)
-	const zoomDelta = (currentDistance - viewport.initScaleDistance) * CAMERA_ZOOM_PINCH_SPEED
-	const oldScale = world.scale.x
-	const newScale = getNewZoomScale(oldScale, zoomDelta)
-
-	viewport.initScaleDistance = currentDistance
-
-	const centerPoint = getPinchCenterPoint(viewport.pointerEvents)
-
-	// Can't use center point position directly beacuse the world position does not allways sit on (0, 0)
-	const pointX = centerPoint.x - world.x
-	const pointY = centerPoint.y - world.y
-
-	const { deltaX, deltaY } = getZoomTransformatinoCompensation(pointX, pointY, newScale, oldScale)
-
-	world.scale.set(newScale)
-	world.x += deltaX
-	world.y += deltaY
 }
