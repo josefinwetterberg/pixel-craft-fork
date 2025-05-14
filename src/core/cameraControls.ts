@@ -6,9 +6,9 @@ import { TILE_HEIGHT_HALF, TILE_WIDTH_HALF } from './tiles'
 export const MOMENTUM_FACTOR = 0.95 // Controls how quickly the movement slows down (0-1)
 export const VELOCITY_THRESHOLD = 0.01 // When to stop the movement completely
 export const CAMERA_ZOOM_LEVELS = {
-	sm: { min: 0.35, max: 1 },
-	md: { min: 0.5, max: 1.25 },
-	lg: { min: 0.75, max: 1.5 }
+	sm: { min: 0.75, max: 0.75 },
+	md: { min: 0.75, max: 0.75 },
+	lg: { min: 0.75, max: 0.75 }
 }
 // TODO - add ticker delta to have the same speed for different fps
 export const CAMERA_ZOOM_WHEEL_SPEED = 0.001
