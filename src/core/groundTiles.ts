@@ -9,12 +9,21 @@ import {
 	TILE_WIDTH_HALF
 } from './tiles'
 import { viewport } from './cameraControls'
+import { getPerlinNoiseWithinViewport, loadPerlinImage } from '../lib/utils/perlinNoise'
 
 export const GRASS_TEXTURE_TILE_COUNT = 1
-const GROUND_BLOCK_TEXTURE = '/game/ground/basic_block.png'
+export const GROUND_BLOCK_TEXTURE = '/game/ground/basic_block.png'
+export const PERLIN_GROUND_MAP = '/game/perlin_world_02.png'
+export const PERLIN_GROUND_WATER_THRESHOLD = 0.3
 
-export const drawGroundTiles = async (width: number, height: number) => {
+export const drawGroundTiles = async () => {
 	const grassTexture = await Assets.load(GROUND_BLOCK_TEXTURE)
+
+	const image = await loadPerlinImage(PERLIN_GROUND_MAP)
+	const perlinMap = await getPerlinNoiseWithinViewport(image)
+
+	const width = image.width
+	const height = image.height
 
 	// We want all the tiles on the positive side of the parent containers axis,
 	// so it geat easier to visualies what should happen when moving the parent container.
@@ -22,6 +31,10 @@ export const drawGroundTiles = async (width: number, height: number) => {
 	const maxXOffset = -(width - 1) * (TILE_WIDTH_HALF * GRASS_TEXTURE_TILE_COUNT)
 
 	return loopTiles(width, height, (row, col) => {
+		if (perlinMap && perlinMap[row][col] < PERLIN_GROUND_WATER_THRESHOLD) {
+			return null
+		}
+
 		const { xPosTile, yPosTile } = getIsometricTilePositions(
 			row,
 			col,
@@ -32,7 +45,7 @@ export const drawGroundTiles = async (width: number, height: number) => {
 		const sprite = Sprite.from(grassTexture)
 		sprite.renderable = false // Deafult, will change in the tick function if it is with in view
 		sprite.width = TILE_WIDTH * GRASS_TEXTURE_TILE_COUNT
-		sprite.height = (TILE_HEIGHT * 2) * GRASS_TEXTURE_TILE_COUNT // 2x height since it is a block with dirt below the grass
+		sprite.height = TILE_HEIGHT * 2 * GRASS_TEXTURE_TILE_COUNT // 2x height since it is a block with dirt below the grass
 		sprite.x = xPosTile - maxXOffset
 		sprite.y = yPosTile
 
@@ -59,6 +72,13 @@ export const setGroundRenderableForInView = (containers: Container[]) => {
 }
 
 export const isGroundWithInBorder = (ground: Container, scale: number) => {
+	return {
+		x1: true,
+		x2: true,
+		y1: true,
+		y2: true
+	}
+
 	const { x, y } = ground.getGlobalPosition()
 	const { border } = viewport
 
@@ -69,14 +89,6 @@ export const isGroundWithInBorder = (ground: Container, scale: number) => {
 
 	const xScale = x / scale + halfGroundWidth
 	const yScale = y / scale + halfGroundHeight
-
-	console.table({
-		scale,
-		top: [yScale + halfWindowHeight, border.y2],
-		// right: [xScale + halfWindowWidth, border.x1]
-		// left: [xScale + halfWindowWidth, border.x2]
-		bottom: [yScale - halfWindowHeight, border.y1]
-	})
 
 	return {
 		y2: yScale - halfWindowHeight > border.y1, // Bottom

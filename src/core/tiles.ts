@@ -6,7 +6,6 @@ export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
 export const TILE_HEIGHT = 64
 export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
-export const TILE_COUNT = 4
 
 const prevRenderablePosition = { x: 0, y: 0 }
 let prevScale = 1

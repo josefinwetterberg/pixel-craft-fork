@@ -1,11 +1,10 @@
-import { Application, Container } from 'pixi.js'
+import { Application, Container, Sprite } from 'pixi.js'
 import {
 	centerContainerPositionToWindow,
 	drawGroundTiles,
 	handlePointerMove,
 	handlePointerDown,
 	handlePointerUp,
-	TILE_COUNT,
 	updateCameraMomentum,
 	shouldRecalculateRenderable,
 	cloneGroundPosToViewport,
@@ -34,7 +33,7 @@ const init = async () => {
 
 	app.stage.addChild(gameWorld)
 
-	const ground = new Container({ children: await drawGroundTiles(TILE_COUNT, TILE_COUNT) })
+	const ground = new Container({ children: (await drawGroundTiles()).filter((child): child is Sprite => child !== null) })
 	centerContainerPositionToWindow(ground)
 	cloneGroundPosToViewport(ground)
 	setInitalPrevRenderPos(ground)

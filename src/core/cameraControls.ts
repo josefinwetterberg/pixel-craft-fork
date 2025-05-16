@@ -1,5 +1,5 @@
-import { Container, FederatedPointerEvent, FederatedWheelEvent } from 'pixi.js'
-import { Viewport, ViewportPointerEvent } from '../types'
+import { Container, FederatedPointerEvent } from 'pixi.js'
+import { Viewport } from '../types'
 import { GRASS_TEXTURE_TILE_COUNT, isGroundWithInBorder } from './groundTiles'
 import { TILE_HEIGHT_HALF, TILE_WIDTH_HALF } from './tiles'
 
