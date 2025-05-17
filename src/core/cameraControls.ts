@@ -93,7 +93,7 @@ export const handlePointerMove = (
 	viewport.dx = clientX - viewport.x
 	viewport.dy = clientY - viewport.y
 
-	const { x1, y1, x2, y2 } = isGroundWithInBorder(ground, world.scale.x)
+	const { x1, y1, x2, y2 } = isGroundWithInBorder(ground)
 	world.x += addCameraXDirection(x1, x2, viewport.dx)
 	world.y += addCameraYDirection(y1, y2, viewport.dy)
 
@@ -112,7 +112,7 @@ export const updateCameraMomentum = (world: Container, ground: Container) => {
 
 	// To avoid dampning on very small numbers, we check if is above the threshold
 	if (isAboveThreshold()) {
-		const { x1, y1, x2, y2 } = isGroundWithInBorder(ground, world.scale.x)
+		const { x1, y1, x2, y2 } = isGroundWithInBorder(ground)
 		world.x += addCameraXDirection(x1, x2, viewport.dx)
 		world.y += addCameraYDirection(y1, y2, viewport.dy)
 

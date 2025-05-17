@@ -1,18 +1,20 @@
 import { Application, Container, Sprite } from 'pixi.js'
+import { hasWindowResized } from './lib/utils'
+import {
+	cloneGroundPosToViewport,
+	handlePointerDown,
+	handlePointerMove,
+	handlePointerUp,
+	setCameraBorder,
+	updateCameraMomentum,
+	viewport
+} from './core/cameraControls'
+import { drawGroundTiles, setGroundRenderableForInView } from './core/groundTiles'
 import {
 	centerContainerPositionToWindow,
-	drawGroundTiles,
-	handlePointerMove,
-	handlePointerDown,
-	handlePointerUp,
-	updateCameraMomentum,
-	shouldRecalculateRenderable,
-	cloneGroundPosToViewport,
 	setInitalPrevRenderPos,
-	setGroundRenderableForInView,
-	setCameraBorder
-} from './core'
-import { hasWindowResized } from './lib/utils'
+	shouldRecalculateRenderable
+} from './core/tiles'
 
 const init = async () => {
 	const app = new Application()
@@ -33,7 +35,8 @@ const init = async () => {
 
 	app.stage.addChild(gameWorld)
 
-	const ground = new Container({ children: (await drawGroundTiles()).filter((child): child is Sprite => child !== null) })
+	const groundTiles = (await drawGroundTiles()).filter((child): child is Sprite => child !== null)
+	const ground = new Container({ children: groundTiles })
 	centerContainerPositionToWindow(ground)
 	cloneGroundPosToViewport(ground)
 	setInitalPrevRenderPos(ground)

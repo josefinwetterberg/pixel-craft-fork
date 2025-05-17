@@ -11,13 +11,17 @@ import {
 import { viewport } from './cameraControls'
 import { getPerlinNoiseWithinViewport, loadPerlinImage } from '../lib/utils/perlinNoise'
 
-export const GRASS_TEXTURE_TILE_COUNT = 1
 export const GROUND_BLOCK_TEXTURE = '/game/ground/basic_block.png'
-export const PERLIN_GROUND_MAP = '/game/perlin_world_02.png'
+export const WATER_BLOCK_TEXTURE = '/game/ground/basic_water.png'
+export const PERLIN_GROUND_MAP = '/game/perlin_world_03.png'
+
+export const GRASS_TEXTURE_TILE_COUNT = 1
 export const PERLIN_GROUND_WATER_THRESHOLD = 0.3
+export const WATER_LEVEL = TILE_HEIGHT - 15 // TODO: Replace 15 with an animated value to reprecent water level changing
 
 export const drawGroundTiles = async () => {
 	const grassTexture = await Assets.load(GROUND_BLOCK_TEXTURE)
+	const waterTexture = await Assets.load(WATER_BLOCK_TEXTURE)
 
 	const image = await loadPerlinImage(PERLIN_GROUND_MAP)
 	const perlinMap = await getPerlinNoiseWithinViewport(image)
@@ -31,9 +35,7 @@ export const drawGroundTiles = async () => {
 	const maxXOffset = -(width - 1) * (TILE_WIDTH_HALF * GRASS_TEXTURE_TILE_COUNT)
 
 	return loopTiles(width, height, (row, col) => {
-		if (perlinMap && perlinMap[row][col] < PERLIN_GROUND_WATER_THRESHOLD) {
-			return null
-		}
+		const isTileWater = perlinMap && perlinMap[row][col] < PERLIN_GROUND_WATER_THRESHOLD
 
 		const { xPosTile, yPosTile } = getIsometricTilePositions(
 			row,
@@ -42,13 +44,13 @@ export const drawGroundTiles = async () => {
 			TILE_HEIGHT_HALF * GRASS_TEXTURE_TILE_COUNT
 		)
 
-		const sprite = Sprite.from(grassTexture)
-		sprite.renderable = false // Deafult, will change in the tick function if it is with in view
+		const texture = isTileWater ? waterTexture : grassTexture
+		const spriteTileHegight = isTileWater ? TILE_HEIGHT : TILE_HEIGHT * 2
+		const sprite = Sprite.from(texture)
 		sprite.width = TILE_WIDTH * GRASS_TEXTURE_TILE_COUNT
-		sprite.height = TILE_HEIGHT * 2 * GRASS_TEXTURE_TILE_COUNT // 2x height since it is a block with dirt below the grass
+		sprite.height = spriteTileHegight * GRASS_TEXTURE_TILE_COUNT // 2x height since it is a block with dirt below the grass
 		sprite.x = xPosTile - maxXOffset
-		sprite.y = yPosTile
-
+		sprite.y = isTileWater ? yPosTile + WATER_LEVEL : yPosTile
 		return sprite
 	})
 }
@@ -71,14 +73,7 @@ export const setGroundRenderableForInView = (containers: Container[]) => {
 	}
 }
 
-export const isGroundWithInBorder = (ground: Container, scale: number) => {
-	return {
-		x1: true,
-		x2: true,
-		y1: true,
-		y2: true
-	}
-
+export const isGroundWithInBorder = (ground: Container) => {
 	const { x, y } = ground.getGlobalPosition()
 	const { border } = viewport
 
@@ -87,8 +82,8 @@ export const isGroundWithInBorder = (ground: Container, scale: number) => {
 	const halfGroundHeight = ground.height / 2
 	const halfGroundWidth = ground.width / 2
 
-	const xScale = x / scale + halfGroundWidth
-	const yScale = y / scale + halfGroundHeight
+	const xScale = x + halfGroundWidth
+	const yScale = y + halfGroundHeight
 
 	return {
 		y2: yScale - halfWindowHeight > border.y1, // Bottom

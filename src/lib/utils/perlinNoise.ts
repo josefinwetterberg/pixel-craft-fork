@@ -25,13 +25,13 @@ export const getPerlinNoiseWithinViewport = async (image: HTMLImageElement) => {
     for (let y = 0; y < image.height; y++) {
       const row = [];
       for (let x = 0; x < image.width; x++) {
-        const i = (y * image.width + x) * 4;
+        const i = (y * image.width + x) * 4; // We multiply by for since pixel is stored as R, G, B, A
         const r = pixels[i];
         const g = pixels[i + 1];
         const b = pixels[i + 2];
   
-        const gray = (r + g + b) / 3;
-        const value = gray / 255;
+        const gray = (r + g + b) / 3; // Average the three colors to gray scale
+        const value = gray / 255; // Normalize from 0-255 to 0-1
   
         row.push(value);
       }
