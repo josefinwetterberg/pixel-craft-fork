@@ -1,6 +1,6 @@
 import { Container, ObservablePoint } from 'pixi.js'
 import { Boundaries, TileCallback } from '../types'
-import { hasCameraMovement } from './cameraControls'
+import { hasCameraMovement, viewport } from './cameraControls'
 
 export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
@@ -45,9 +45,14 @@ export const centerContainerPositionToWindow = (container: Container) => {
 	container.y = centerWindowY - centerContainerY
 }
 
-export const isContainerWithInView = (container: Container, boundaries: Boundaries) => {
-	const { width, height } = container
-	const { x, y } = container.getGlobalPosition()
+export const isContainerWithInView = (x: number, y: number, width: number, height: number) => {
+	const { renderBorder } = viewport
+	const boundaries: Boundaries = {
+		top: renderBorder.y,
+		right: renderBorder.x + renderBorder.width,
+		bottom: renderBorder.y + renderBorder.height,
+		left: renderBorder.x
+	}
 
 	return (
 		y < boundaries.bottom &&
@@ -81,18 +86,23 @@ export const shouldRecalculateRenderable = (x: number, y: number, scale: Observa
 	return false
 }
 
-// This is a generic in view check for containers
-// Make a copy of the functino if unique boundaries are required
-export const setContainersRenderableForInView = (containers: Container[]) => {
-	const { innerHeight, innerWidth } = window
-	const boundaries = {
-		top: -innerHeight,
-		right: window.innerWidth * 2,
-		bottom: window.innerHeight * 2,
-		left: -innerWidth
-	}
+export const removeTilesOutOfView = (container: Container) => {
+	for (let i = container.children.length - 1; i >= 0; i--) {
+		const tile = container.children[i]
+		const { width, height } = tile
+		const { x, y } = tile.getGlobalPosition()
 
-	for (const container of containers) {
-		container.renderable = isContainerWithInView(container, boundaries)
+		if (!isContainerWithInView(x, y, width, height)) {
+			tile.removeFromParent()
+		}
+	}
+}
+
+export const getGlobalPositionFromNoneStagedTile = (parent: Container, x: number, y: number) => {
+	const globalParent = parent.getGlobalPosition()
+
+	return {
+		x: x + globalParent.x,
+		y: y + globalParent.y
 	}
 }

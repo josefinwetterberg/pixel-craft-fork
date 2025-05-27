@@ -1,24 +1,25 @@
 import { Container, FederatedPointerEvent } from 'pixi.js'
 import { Viewport } from '../types'
-import { GRASS_TEXTURE_TILE_COUNT, isGroundWithInBorder } from './groundTiles'
-import { TILE_HEIGHT_HALF, TILE_WIDTH_HALF } from './tiles'
+import { drawGroundTiles, isGroundWithInBorder } from './groundTiles'
+import { removeTilesOutOfView } from './tiles'
 
 export const MOMENTUM_FACTOR = 0.95 // Controls how quickly the movement slows down (0-1)
 export const VELOCITY_THRESHOLD = 0.01 // When to stop the movement completely
 
 export const viewport: Viewport = {
-	x: 0,
-	y: 0,
+	clientX: 0,
+	clientY: 0,
 	dx: 0,
 	dy: 0,
 	isMoveable: false,
 	pointerEvents: [],
-	border: { x1: 0, y1: 0, x2: 0, y2: 0 }
-}
-
-export const cloneGroundPosToViewport = (ground: Container) => {
-	viewport.x = ground.x
-	viewport.y = ground.y
+	border: { x: 0, y: 0, width: 0, height: 0 },
+	renderBorder: {
+		x: window.innerWidth / 4,
+		y: window.innerHeight / 4,
+		width: window.innerWidth / 2,
+		height: window.innerHeight / 2
+	}
 }
 
 const isPinchZoomPointers = () => {
@@ -44,8 +45,8 @@ export const handlePointerDown = (ev: FederatedPointerEvent) => {
 
 	viewport.isMoveable = true
 
-	viewport.x = ev.clientX
-	viewport.y = ev.clientY
+	viewport.clientX = ev.clientX
+	viewport.clientY = ev.clientY
 }
 
 export const handlePointerUp = (ev: PointerEvent) => {
@@ -59,18 +60,7 @@ export const setCameraBorder = (ground: Container) => {
 	const { width, height } = ground
 	const { x, y } = ground.getGlobalPosition()
 
-	const quarterWidth = width / 4
-	const quarterHeight = height / 4
-
-	const paddingX = TILE_WIDTH_HALF * GRASS_TEXTURE_TILE_COUNT
-	const paddingY = TILE_HEIGHT_HALF * GRASS_TEXTURE_TILE_COUNT
-
-	viewport.border = {
-		x1: x + quarterWidth + paddingX,
-		y1: y + quarterHeight + paddingY,
-		x2: x + quarterWidth * 3 - paddingX,
-		y2: y + quarterHeight * 3 - paddingY
-	}
+	viewport.border = { x, y, width, height }
 }
 
 const addCameraXDirection = (x1: boolean, x2: boolean, dx: number) => {
@@ -83,22 +73,23 @@ const addCameraYDirection = (y1: boolean, y2: boolean, dy: number) => {
 
 export const handlePointerMove = (
 	ev: FederatedPointerEvent,
-	world: Container,
-	ground: Container
+	ground: Container,
+	world: Container
 ) => {
 	if (!viewport.isMoveable) return
 
 	const { clientX, clientY } = ev
 
-	viewport.dx = clientX - viewport.x
-	viewport.dy = clientY - viewport.y
+	viewport.dx = clientX - viewport.clientX
+	viewport.dy = clientY - viewport.clientY
 
 	const { x1, y1, x2, y2 } = isGroundWithInBorder(ground)
+
 	world.x += addCameraXDirection(x1, x2, viewport.dx)
 	world.y += addCameraYDirection(y1, y2, viewport.dy)
 
-	viewport.x = clientX
-	viewport.y = clientY
+	viewport.clientX = clientX
+	viewport.clientY = clientY
 }
 
 export const hasCameraMovement = () => viewport.dx !== 0 && viewport.dy !== 0
@@ -108,7 +99,7 @@ const isAboveThreshold = () => {
 }
 
 export const updateCameraMomentum = (world: Container, ground: Container) => {
-	if (!hasCameraMovement()) return
+	if (!hasCameraMovement() || viewport.isMoveable) return
 
 	// To avoid dampning on very small numbers, we check if is above the threshold
 	if (isAboveThreshold()) {
@@ -119,6 +110,13 @@ export const updateCameraMomentum = (world: Container, ground: Container) => {
 		// Reduce direction diff
 		viewport.dx *= MOMENTUM_FACTOR
 		viewport.dy *= MOMENTUM_FACTOR
+
+		removeTilesOutOfView(ground)
+
+		const newGroundTiles = drawGroundTiles(world, ground)
+		if (newGroundTiles.length > 0) {
+			ground.addChild(...newGroundTiles)
+		}
 	} else {
 		viewport.dx = viewport.dy = 0
 	}

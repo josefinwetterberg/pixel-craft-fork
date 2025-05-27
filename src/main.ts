@@ -1,62 +1,83 @@
-import { Application, Container, Sprite } from 'pixi.js'
+import { Application, Container, Graphics } from 'pixi.js'
 import { hasWindowResized } from './lib/utils'
 import {
-	cloneGroundPosToViewport,
 	handlePointerDown,
 	handlePointerMove,
 	handlePointerUp,
+	hasCameraMovement,
 	setCameraBorder,
 	updateCameraMomentum,
 	viewport
 } from './core/cameraControls'
-import { drawGroundTiles, setGroundRenderableForInView } from './core/groundTiles'
+import { drawGroundTiles } from './core/groundTiles'
 import {
 	centerContainerPositionToWindow,
-	setInitalPrevRenderPos,
-	shouldRecalculateRenderable
+	removeTilesOutOfView,
+	setInitalPrevRenderPos
 } from './core/tiles'
+import { loadAllinitialAssets } from './core/assets'
 
 const init = async () => {
 	const app = new Application()
 	await app.init({
 		resizeTo: window,
-		backgroundColor: '#141414',
 		antialias: false
 	})
 	document.body.appendChild(app.canvas)
 	// @ts-ignore
 	globalThis.__PIXI_APP__ = app
 
-	const gameWorld = new Container({ isRenderGroup: true, eventMode: 'static' })
-	gameWorld.on('pointerdown', (ev) => handlePointerDown(ev))
-	// event on window since a "pointerup" event can trigger if the pointer is out of the initial "pointerdown" container
+	await loadAllinitialAssets()
+
+	const world = new Container({
+		isRenderGroup: true,
+		eventMode: 'static',
+		label: 'world'
+	})
+	world.on('pointerdown', (ev) => handlePointerDown(ev))
 	window.addEventListener('pointerup', (ev) => handlePointerUp(ev))
-	gameWorld.on('pointermove', (ev) => handlePointerMove(ev, gameWorld, ground))
+	world.on('pointermove', (ev) => handlePointerMove(ev, ground, world))
 
-	app.stage.addChild(gameWorld)
+	app.stage.addChild(world)
 
-	const groundTiles = (await drawGroundTiles()).filter((child): child is Sprite => child !== null)
-	const ground = new Container({ children: groundTiles })
+	let ground = new Container({
+		children: drawGroundTiles(world),
+		label: 'ground'
+	})
 	centerContainerPositionToWindow(ground)
-	cloneGroundPosToViewport(ground)
 	setInitalPrevRenderPos(ground)
-	gameWorld.addChild(ground)
+	removeTilesOutOfView(ground)
 
-	setGroundRenderableForInView(ground.children)
+	world.addChild(ground)
+
+	const worldBord = new Graphics()
+		.rect(
+			viewport.renderBorder.x,
+			viewport.renderBorder.y,
+			viewport.renderBorder.width,
+			viewport.renderBorder.height
+		)
+		.stroke(0x00ff00)
+	app.stage.addChild(worldBord)
+
 	setCameraBorder(ground)
 
 	app.ticker.add(() => {
 		if (hasWindowResized()) {
 			centerContainerPositionToWindow(ground)
-			cloneGroundPosToViewport(ground)
 		}
 
-		if (shouldRecalculateRenderable(gameWorld.x, gameWorld.y, gameWorld.scale)) {
-			setGroundRenderableForInView(ground.children)
+		if (hasCameraMovement()) {
+			removeTilesOutOfView(ground)
+
+			const newGroundTiles = drawGroundTiles(world, ground)
+			if (newGroundTiles.length > 0) {
+				ground.addChild(...newGroundTiles)
+			}
 		}
 
 		// Only runs when there is a direction diff > 0
-		updateCameraMomentum(gameWorld, ground)
+		updateCameraMomentum(world, ground)
 	})
 }
 

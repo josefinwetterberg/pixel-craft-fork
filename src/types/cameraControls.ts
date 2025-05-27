@@ -6,18 +6,19 @@ export type ViewportPointerEvent = {
 }
 
 export type Border = {
-	x1: number
-	y1: number
-	x2: number
-	y2: number
+	x: number
+	y: number
+	width: number
+	height: number
 }
 
 export type Viewport = {
-	x: number
-	y: number
+	clientX: number
+	clientY: number
 	dx: number
 	dy: number
 	isMoveable: boolean
 	pointerEvents: ViewportPointerEvent[]
 	border: Border
+	renderBorder: Border
 }
