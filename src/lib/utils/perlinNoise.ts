@@ -1,5 +1,5 @@
 import { Container } from 'pixi.js'
-import { TILE_HEIGHT, TILE_WIDTH_HALF } from '../../core/tiles'
+import { PerlinNoise } from '../../types'
 
 export const loadPerlinImage = async (path: string): Promise<HTMLImageElement> => {
 	const image = new Image()
@@ -10,38 +10,19 @@ export const loadPerlinImage = async (path: string): Promise<HTMLImageElement> =
 	})
 }
 
-const getPositionFromPerlinMap = (container: Container) => {
-	const dimension = window.innerWidth
-
-	const height = Math.ceil(dimension / TILE_HEIGHT)
-	const width = Math.ceil(dimension / TILE_WIDTH_HALF)
-
-	return {
-		x: Math.abs(Math.ceil(container.x / TILE_HEIGHT)),
-		y: Math.abs(Math.ceil(container.y / TILE_WIDTH_HALF)),
-		width,
-		height
-	}
-}
-
-const canvas = document.getElementById('perlin') as HTMLCanvasElement
-// const canvas = document.createElement('canvas')
-const ctx = canvas.getContext('2d', { willReadFrequently: true })
-
-export const getPerlinNoiseWithinViewport = (image: HTMLImageElement, container: Container) => {
+export const getPerlinNoise = (image: HTMLImageElement): PerlinNoise | undefined => {
+	const canvas = document.createElement('canvas')
+	const ctx = canvas.getContext('2d')
 	if (!ctx) return
 
-	canvas.width = image.width
-	canvas.height = image.height
+	const { width, height } = image
+
+	canvas.width = width
+	canvas.height = height
 
 	ctx.drawImage(image, 0, 0)
 
-	const { x, y, width, height } = getPositionFromPerlinMap(container)
-	const imageData = ctx.getImageData(x, y, width, height)
-	ctx.clearRect(0, 0, canvas.width, canvas.height)
-	canvas.width = 300
-	canvas.height = 300
-	ctx.putImageData(imageData, 0, 0)
+	const imageData = ctx.getImageData(0, 0, width, height)
 	const pixels = imageData.data
 
 	const values = []
@@ -68,7 +49,7 @@ export const getPerlinNoiseWithinViewport = (image: HTMLImageElement, container:
 export const hasPerlinPosTile = (container: Container, x: number, y: number) => {
 	for (const tile of container.children) {
 		const globalTilePos = tile.getGlobalPosition()
-		const areaPadding = 20
+		const areaPadding = 2
 
 		const isWithInXAxis = x >= globalTilePos.x - areaPadding && x <= globalTilePos.x + areaPadding
 		const isWithInYAxis = y >= globalTilePos.y - areaPadding && y <= globalTilePos.y + areaPadding

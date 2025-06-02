@@ -21,4 +21,8 @@ export type Viewport = {
 	pointerEvents: ViewportPointerEvent[]
 	border: Border
 	renderBorder: Border
+	world: {
+		width: number
+		height: number
+	}
 }

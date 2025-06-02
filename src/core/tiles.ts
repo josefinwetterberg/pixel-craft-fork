@@ -1,14 +1,17 @@
-import { Container, ObservablePoint } from 'pixi.js'
-import { Boundaries, TileCallback } from '../types'
-import { hasCameraMovement, viewport } from './cameraControls'
+import { Container } from 'pixi.js'
+import { Boundaries, Chunks, TileCallback } from '../types/tiles'
+import { viewport } from './cameraControls'
 
 export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
 export const TILE_HEIGHT = 64
 export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
 
+export const CHUNK_SIZE = 64
+export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
+export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
+
 const prevRenderablePosition = { x: 0, y: 0 }
-let prevScale = 1
 
 export const loopTiles = <T>(width: number, height: number, callback: TileCallback<T>): T[] => {
 	const results: T[] = []
@@ -62,24 +65,20 @@ export const isContainerWithInView = (x: number, y: number, width: number, heigh
 	)
 }
 
-export const setInitalPrevRenderPos = (ground: Container) => {
-	prevRenderablePosition.x = ground.x
-	prevRenderablePosition.y = ground.y
+export const setInitalPrevRenderPos = (container: Container) => {
+	prevRenderablePosition.x = container.x
+	prevRenderablePosition.y = container.y
 }
 
-export const shouldRecalculateRenderable = (x: number, y: number, scale: ObservablePoint) => {
-	if (!hasCameraMovement() && scale.x === prevScale) return false
-
+export const hasMovedToNewChunk = (x: number, y: number) => {
 	const movedWidthDiff = Math.abs(x - prevRenderablePosition.x)
 	const movedHeightDiff = Math.abs(y - prevRenderablePosition.y)
-	const { innerHeight, innerWidth } = window
 
-	if (movedWidthDiff >= innerWidth / 2 || movedHeightDiff >= innerHeight / 2) {
+	if (movedWidthDiff >= CHUNK_WIDTH / 2) {
 		prevRenderablePosition.x = x
-		prevRenderablePosition.y = y
 		return true
-	} else if (scale.x !== prevScale) {
-		prevScale = scale.x
+	} else if (movedHeightDiff >= (CHUNK_SIZE * TILE_HEIGHT_HALF) / 2) {
+		prevRenderablePosition.y = y
 		return true
 	}
 
@@ -105,4 +104,61 @@ export const getGlobalPositionFromNoneStagedTile = (parent: Container, x: number
 		x: x + globalParent.x,
 		y: y + globalParent.y
 	}
+}
+
+export const getChunkKey = (row: number, col: number) => {
+	const chunkX = Math.floor(col / CHUNK_SIZE)
+	const chunkY = Math.floor(row / CHUNK_SIZE)
+
+	return `${chunkX}_${chunkY}`
+}
+
+export const getVisibleChunks = (world: Container, chunks: Chunks) => {
+	const keys: string[] = []
+	const selectedChunks: Chunks = new Map()
+
+	const col = Math.floor(-world.x / TILE_WIDTH)
+	const row = Math.floor(-world.y / TILE_HEIGHT)
+
+	const centerChunkX = Math.floor(col / CHUNK_SIZE)
+	const centerChunkY = Math.floor(row / CHUNK_SIZE)
+
+	for (let chunkY = centerChunkY - 1; chunkY <= centerChunkY + 1; chunkY++) {
+		for (let chunkX = centerChunkX - 1; chunkX <= centerChunkX + 1; chunkX++) {
+			const key = `${chunkX}_${chunkY}`
+			const chunk = chunks.get(key)
+
+			if (chunk) {
+				selectedChunks.set(key, chunk)
+				keys.push(key)
+			}
+		}
+	}
+
+	return { keys, chunks: selectedChunks }
+}
+
+export const updateVisibleChunks = (world: Container, ground: Container, chunks: Chunks) => {
+	const visibleChunks = getVisibleChunks(world, chunks)
+
+	const childrenToRemove = ground.children.filter((chunk) => !visibleChunks.chunks.has(chunk.label))
+	ground.removeChild(...childrenToRemove)
+
+	const currentGroundChunks = new Set(ground.children.map((chunk) => chunk.label))
+	const chunksToAdd: Container[] = []
+
+	for (const key of visibleChunks.keys) {
+		if (!currentGroundChunks.has(key)) {
+			const chunk = visibleChunks.chunks.get(key)
+			if (chunk) {
+				chunksToAdd.push(chunk)
+				ground.addChild(chunk)
+			}
+		}
+	}
+
+	console.log({
+		childrenToRemove: childrenToRemove.map((c) => c.label),
+		chunksToAdd: chunksToAdd.map((c) => c.label)
+	})
 }

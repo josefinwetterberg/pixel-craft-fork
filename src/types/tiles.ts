@@ -1,3 +1,5 @@
+import { Container } from 'pixi.js'
+
 export type TileCallback<T> = (row: number, col: number, ...args: any[]) => T
 
 export type Boundaries = {
@@ -6,3 +8,5 @@ export type Boundaries = {
 	bottom: number
 	left: number
 }
+
+export type Chunks = Map<string, Container>

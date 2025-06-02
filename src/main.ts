@@ -1,5 +1,4 @@
-import { Application, Container, Graphics } from 'pixi.js'
-import { hasWindowResized } from './lib/utils'
+import { Application, Container, Culler, Rectangle } from 'pixi.js'
 import {
 	handlePointerDown,
 	handlePointerMove,
@@ -11,11 +10,14 @@ import {
 } from './core/cameraControls'
 import { drawGroundTiles } from './core/groundTiles'
 import {
-	centerContainerPositionToWindow,
-	removeTilesOutOfView,
-	setInitalPrevRenderPos
+	hasMovedToNewChunk,
+	setInitalPrevRenderPos,
+	TILE_HEIGHT,
+	TILE_WIDTH,
+	updateVisibleChunks
 } from './core/tiles'
-import { loadAllinitialAssets } from './core/assets'
+import { loadAllinitialAssets, PERLIN } from './core/assets'
+import { getPerlinNoise } from './lib/utils/perlinNoise'
 
 const init = async () => {
 	const app = new Application()
@@ -27,57 +29,54 @@ const init = async () => {
 	// @ts-ignore
 	globalThis.__PIXI_APP__ = app
 
+	const { renderBorder } = viewport
+	const view = new Rectangle(
+		renderBorder.x,
+		renderBorder.y,
+		renderBorder.width,
+		renderBorder.height
+	)
+
 	await loadAllinitialAssets()
+
+	const perlin = getPerlinNoise(PERLIN.PERLIN_GROUND_MAP)
+
+	const worldWidth = (perlin?.width || 0) * TILE_WIDTH
+	const worldHeight = (perlin?.height || 0) * TILE_HEIGHT
+	viewport.world = { width: worldWidth, height: worldHeight }
 
 	const world = new Container({
 		isRenderGroup: true,
 		eventMode: 'static',
-		label: 'world'
+		label: 'world',
+		x: -worldWidth / 2,
+		y: -worldHeight / 2
 	})
-	world.on('pointerdown', (ev) => handlePointerDown(ev))
-	window.addEventListener('pointerup', (ev) => handlePointerUp(ev))
-	world.on('pointermove', (ev) => handlePointerMove(ev, ground, world))
+
+	setInitalPrevRenderPos(world)
 
 	app.stage.addChild(world)
 
-	let ground = new Container({
-		children: drawGroundTiles(world),
-		label: 'ground'
-	})
-	centerContainerPositionToWindow(ground)
-	setInitalPrevRenderPos(ground)
-	removeTilesOutOfView(ground)
+	world.on('pointerdown', (ev) => handlePointerDown(ev))
+	world.on('pointermove', (ev) => handlePointerMove(ev, ground, world))
+	window.addEventListener('pointerup', (ev) => handlePointerUp(ev))
 
+	const chunks = drawGroundTiles(perlin)
+
+	const ground = new Container({ label: 'ground' })
+	updateVisibleChunks(world, ground, chunks)
 	world.addChild(ground)
-
-	const worldBord = new Graphics()
-		.rect(
-			viewport.renderBorder.x,
-			viewport.renderBorder.y,
-			viewport.renderBorder.width,
-			viewport.renderBorder.height
-		)
-		.stroke(0x00ff00)
-	app.stage.addChild(worldBord)
 
 	setCameraBorder(ground)
 
 	app.ticker.add(() => {
-		if (hasWindowResized()) {
-			centerContainerPositionToWindow(ground)
-		}
-
-		if (hasCameraMovement()) {
-			removeTilesOutOfView(ground)
-
-			const newGroundTiles = drawGroundTiles(world, ground)
-			if (newGroundTiles.length > 0) {
-				ground.addChild(...newGroundTiles)
-			}
-		}
-
-		// Only runs when there is a direction diff > 0
 		updateCameraMomentum(world, ground)
+
+		if (hasCameraMovement() && hasMovedToNewChunk(world.x, world.y)) {
+			updateVisibleChunks(world, ground, chunks)
+		}
+
+		Culler.shared.cull(world, view)
 	})
 }
 

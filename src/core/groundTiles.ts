@@ -1,24 +1,22 @@
 import { Container, Sprite } from 'pixi.js'
 import {
-	getGlobalPositionFromNoneStagedTile,
+	getChunkKey,
 	getIsometricTilePositions,
-	isContainerWithInView,
 	loopTiles,
 	TILE_HEIGHT,
 	TILE_HEIGHT_HALF,
 	TILE_WIDTH,
 	TILE_WIDTH_HALF
 } from './tiles'
-import { getPerlinNoiseWithinViewport, hasPerlinPosTile } from '../lib/utils/perlinNoise'
-import { ASSETS, PERLIN } from './assets'
+import { ASSETS } from './assets'
+import { Chunks } from '../types/tiles'
+import { PerlinNoise } from '../types'
 
 export const PERLIN_GROUND_WATER_THRESHOLD = 0.3
 export const WATER_LEVEL = TILE_HEIGHT - 15 // TODO: Replace 15 with an animated value to reprecent water level changing
 
 // On inital draw there is no ground there fore ground is optional
-export const drawGroundTiles = (world: Container, ground?: Container): Sprite[] => {
-	const perlin = getPerlinNoiseWithinViewport(PERLIN.PERLIN_GROUND_MAP, world)
-
+export const drawGroundTiles = (perlin: PerlinNoise | undefined) => {
 	const width = perlin?.width || 0
 	const height = perlin?.height || 0
 
@@ -27,7 +25,15 @@ export const drawGroundTiles = (world: Container, ground?: Container): Sprite[] 
 	// This is only nessasary for x axis since all tiles on y is draw on y+ alredy
 	const maxXOffset = -(width - 1) * TILE_WIDTH_HALF
 
-	const tiles = loopTiles(width, height, (row, col) => {
+	const chunks: Chunks = new Map<string, Container>()
+
+	loopTiles(width, height, (row, col) => {
+		const key = getChunkKey(row, col)
+
+		if (!chunks.has(key)) {
+			chunks.set(key, new Container({ label: key, zIndex: row + col, cullable: true }))
+		}
+
 		const { xPosTile, yPosTile } = getIsometricTilePositions(
 			row,
 			col,
@@ -47,43 +53,15 @@ export const drawGroundTiles = (world: Container, ground?: Container): Sprite[] 
 		sprite.x = x
 		sprite.y = y
 
-		return sprite
+		chunks.get(key)?.addChild(sprite)
 	})
 
-	return tiles.filter((tile) => {
-		if (ground) {
-			const globalPos = getGlobalPositionFromNoneStagedTile(ground, tile.x, tile.y)
-			const isInView = isContainerWithInView(globalPos.x, globalPos.y, tile.width, tile.height)
-			const hasRenderedTile = hasPerlinPosTile(ground, globalPos.x, globalPos.y)
-
-			if (!isInView || (isInView && hasRenderedTile)) {
-				return false
-			}
-		}
-
-		return tile
-	})
+	return chunks
 }
 
-// export const setGroundRenderableForInView = (containers: Container[]) => {
-// 	// TODO: Select a larger area of tiles to check not all containers
-// 	// And for faster movement get a larger area to the direction the camera is moving
-// 	const EXTRA_TILES = 5
-// 	const paddingX = TILE_WIDTH * GRASS_TEXTURE_TILE_COUNT * EXTRA_TILES
-// 	const paddingY = TILE_HEIGHT * GRASS_TEXTURE_TILE_COUNT * EXTRA_TILES
-// 	const boundaries = {
-// 		top: -paddingY,
-// 		right: window.innerWidth + paddingX,
-// 		bottom: window.innerHeight + paddingY,
-// 		left: -paddingX
-// 	}
-
-// 	for (const container of containers) {
-// 		container.renderable = isContainerWithInView(container, boundaries)
-// 	}
-// }
-
 export const isGroundWithInBorder = (ground: Container) => {
+	ground
+
 	return {
 		y2: true,
 		y1: true,

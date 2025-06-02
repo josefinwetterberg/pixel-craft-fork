@@ -1,10 +1,12 @@
 import { Container, FederatedPointerEvent } from 'pixi.js'
-import { Viewport } from '../types'
-import { drawGroundTiles, isGroundWithInBorder } from './groundTiles'
-import { removeTilesOutOfView } from './tiles'
+import { Viewport } from '../types/cameraControls'
+import { isGroundWithInBorder } from './groundTiles'
+import { TILE_HEIGHT, TILE_WIDTH } from './tiles'
 
 export const MOMENTUM_FACTOR = 0.95 // Controls how quickly the movement slows down (0-1)
 export const VELOCITY_THRESHOLD = 0.01 // When to stop the movement completely
+export const RENDER_PADDING_X = TILE_WIDTH * 10
+export const RENDER_PADDING_Y = TILE_HEIGHT * 10
 
 export const viewport: Viewport = {
 	clientX: 0,
@@ -15,11 +17,12 @@ export const viewport: Viewport = {
 	pointerEvents: [],
 	border: { x: 0, y: 0, width: 0, height: 0 },
 	renderBorder: {
-		x: window.innerWidth / 4,
-		y: window.innerHeight / 4,
-		width: window.innerWidth / 2,
-		height: window.innerHeight / 2
-	}
+		x: -RENDER_PADDING_X,
+		y: -RENDER_PADDING_Y,
+		width: window.innerWidth + RENDER_PADDING_X,
+		height: window.innerHeight + RENDER_PADDING_Y
+	},
+	world: { width: 0, height: 0 }
 }
 
 const isPinchZoomPointers = () => {
@@ -110,13 +113,6 @@ export const updateCameraMomentum = (world: Container, ground: Container) => {
 		// Reduce direction diff
 		viewport.dx *= MOMENTUM_FACTOR
 		viewport.dy *= MOMENTUM_FACTOR
-
-		removeTilesOutOfView(ground)
-
-		const newGroundTiles = drawGroundTiles(world, ground)
-		if (newGroundTiles.length > 0) {
-			ground.addChild(...newGroundTiles)
-		}
 	} else {
 		viewport.dx = viewport.dy = 0
 	}

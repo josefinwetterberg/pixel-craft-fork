@@ -1,2 +1,5 @@
-export * from './tiles'
-export * from './cameraControls'
+export type PerlinNoise = {
+	map: number[][]
+	width: number
+	height: number
+}

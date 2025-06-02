@@ -16,7 +16,3 @@ canvas {
 	inset: 0;
 	user-select: none;
 }
-
-#perlin {
-	z-index: 100;
-}
