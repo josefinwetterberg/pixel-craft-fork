@@ -9,13 +9,7 @@ import {
 	viewport
 } from './core/cameraControls'
 import { drawGroundTiles } from './core/groundTiles'
-import {
-	hasMovedToNewChunk,
-	setInitalPrevRenderPos,
-	TILE_HEIGHT,
-	TILE_WIDTH,
-	updateVisibleChunks
-} from './core/tiles'
+import { setInitalPrevRenderPos, updateVisibleChunks } from './core/tiles'
 import { loadAllinitialAssets, PERLIN } from './core/assets'
 import { getPerlinNoise } from './lib/utils/perlinNoise'
 
@@ -41,16 +35,10 @@ const init = async () => {
 
 	const perlin = getPerlinNoise(PERLIN.PERLIN_GROUND_MAP)
 
-	const worldWidth = (perlin?.width || 0) * TILE_WIDTH
-	const worldHeight = (perlin?.height || 0) * TILE_HEIGHT
-	viewport.world = { width: worldWidth, height: worldHeight }
-
 	const world = new Container({
 		isRenderGroup: true,
 		eventMode: 'static',
-		label: 'world',
-		x: -worldWidth / 2,
-		y: -worldHeight / 2
+		label: 'world'
 	})
 
 	setInitalPrevRenderPos(world)
@@ -72,7 +60,7 @@ const init = async () => {
 	app.ticker.add(() => {
 		updateCameraMomentum(world, ground)
 
-		if (hasCameraMovement() && hasMovedToNewChunk(world.x, world.y)) {
+		if (hasCameraMovement()) {
 			updateVisibleChunks(world, ground, chunks)
 		}
 

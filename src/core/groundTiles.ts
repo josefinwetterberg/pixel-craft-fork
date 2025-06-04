@@ -15,25 +15,13 @@ import { PerlinNoise } from '../types'
 export const PERLIN_GROUND_WATER_THRESHOLD = 0.3
 export const WATER_LEVEL = TILE_HEIGHT - 15 // TODO: Replace 15 with an animated value to reprecent water level changing
 
-// On inital draw there is no ground there fore ground is optional
 export const drawGroundTiles = (perlin: PerlinNoise | undefined) => {
 	const width = perlin?.width || 0
 	const height = perlin?.height || 0
 
-	// We want all the tiles on the positive side of the parent containers axis,
-	// so it geat easier to visualies what should happen when moving the parent container.
-	// This is only nessasary for x axis since all tiles on y is draw on y+ alredy
-	const maxXOffset = -(width - 1) * TILE_WIDTH_HALF
-
 	const chunks: Chunks = new Map<string, Container>()
 
 	loopTiles(width, height, (row, col) => {
-		const key = getChunkKey(row, col)
-
-		if (!chunks.has(key)) {
-			chunks.set(key, new Container({ label: key, zIndex: row + col, cullable: true }))
-		}
-
 		const { xPosTile, yPosTile } = getIsometricTilePositions(
 			row,
 			col,
@@ -43,7 +31,7 @@ export const drawGroundTiles = (perlin: PerlinNoise | undefined) => {
 
 		const isTileWater = perlin?.map && perlin?.map[row][col] < PERLIN_GROUND_WATER_THRESHOLD
 		const spriteTileHegight = isTileWater ? TILE_HEIGHT : TILE_HEIGHT * 2 // 2x height since it is a block with dirt below the grass
-		const x = xPosTile - maxXOffset
+		const x = xPosTile - TILE_WIDTH_HALF
 		const y = isTileWater ? yPosTile + WATER_LEVEL : yPosTile
 
 		const texture = isTileWater ? ASSETS.WATER_BLOCK_TEXTURE : ASSETS.GROUND_BLOCK_TEXTURE
@@ -52,6 +40,11 @@ export const drawGroundTiles = (perlin: PerlinNoise | undefined) => {
 		sprite.height = spriteTileHegight
 		sprite.x = x
 		sprite.y = y
+
+		const key = getChunkKey(row, col)
+		if (!chunks.has(key)) {
+			chunks.set(key, new Container({ label: key, zIndex: row + col, cullable: true }))
+		}
 
 		chunks.get(key)?.addChild(sprite)
 	})

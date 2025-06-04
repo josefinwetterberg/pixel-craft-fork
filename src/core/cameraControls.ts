@@ -21,8 +21,7 @@ export const viewport: Viewport = {
 		y: -RENDER_PADDING_Y,
 		width: window.innerWidth + RENDER_PADDING_X,
 		height: window.innerHeight + RENDER_PADDING_Y
-	},
-	world: { width: 0, height: 0 }
+	}
 }
 
 const isPinchZoomPointers = () => {

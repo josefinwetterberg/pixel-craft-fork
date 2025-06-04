@@ -117,14 +117,18 @@ export const getVisibleChunks = (world: Container, chunks: Chunks) => {
 	const keys: string[] = []
 	const selectedChunks: Chunks = new Map()
 
-	const col = Math.floor(-world.x / TILE_WIDTH)
-	const row = Math.floor(-world.y / TILE_HEIGHT)
+	const worldX = -world.x
+	const worldY = -world.y
 
-	const centerChunkX = Math.floor(col / CHUNK_SIZE)
-	const centerChunkY = Math.floor(row / CHUNK_SIZE)
+	// Isometric position projection
+	const x = Math.floor((worldX / TILE_WIDTH_HALF + worldY / TILE_HEIGHT_HALF) / 2)
+	const y = Math.floor((worldY / TILE_HEIGHT_HALF - worldX / TILE_WIDTH_HALF) / 2)
 
-	for (let chunkY = centerChunkY - 1; chunkY <= centerChunkY + 1; chunkY++) {
-		for (let chunkX = centerChunkX - 1; chunkX <= centerChunkX + 1; chunkX++) {
+	const col = Math.floor(x / CHUNK_SIZE)
+	const row = Math.floor(y / CHUNK_SIZE)
+
+	for (let chunkY = row - 1; chunkY <= row + 1; chunkY++) {
+		for (let chunkX = col - 1; chunkX <= col + 1; chunkX++) {
 			const key = `${chunkX}_${chunkY}`
 			const chunk = chunks.get(key)
 
@@ -145,20 +149,12 @@ export const updateVisibleChunks = (world: Container, ground: Container, chunks:
 	ground.removeChild(...childrenToRemove)
 
 	const currentGroundChunks = new Set(ground.children.map((chunk) => chunk.label))
-	const chunksToAdd: Container[] = []
-
 	for (const key of visibleChunks.keys) {
 		if (!currentGroundChunks.has(key)) {
 			const chunk = visibleChunks.chunks.get(key)
 			if (chunk) {
-				chunksToAdd.push(chunk)
 				ground.addChild(chunk)
 			}
 		}
 	}
-
-	console.log({
-		childrenToRemove: childrenToRemove.map((c) => c.label),
-		chunksToAdd: chunksToAdd.map((c) => c.label)
-	})
 }
