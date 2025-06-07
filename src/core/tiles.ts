@@ -48,22 +48,22 @@ export const centerContainerPositionToWindow = (container: Container) => {
 	container.y = centerWindowY - centerContainerY
 }
 
-export const isContainerWithInView = (x: number, y: number, width: number, height: number) => {
-	const { renderBorder } = viewport
-	const boundaries: Boundaries = {
-		top: renderBorder.y,
-		right: renderBorder.x + renderBorder.width,
-		bottom: renderBorder.y + renderBorder.height,
-		left: renderBorder.x
-	}
-
-	return (
-		y < boundaries.bottom &&
-		y + height > boundaries.top &&
-		x < boundaries.right &&
-		x + width > boundaries.left
-	)
-}
+// export const isContainerWithInView = (x: number, y: number, width: number, height: number) => {
+// 	const { renderBorder } = viewport
+// 	const boundaries: Boundaries = {
+// 		top: renderBorder.y,
+// 		right: renderBorder.x + renderBorder.width,
+// 		bottom: renderBorder.y + renderBorder.height,
+// 		left: renderBorder.x
+// 	}
+//
+// 	return (
+// 		y < boundaries.bottom &&
+// 		y + height > boundaries.top &&
+// 		x < boundaries.right &&
+// 		x + width > boundaries.left
+// 	)
+// }
 
 export const setInitalPrevRenderPos = (container: Container) => {
 	prevRenderablePosition.x = container.x
@@ -85,17 +85,17 @@ export const hasMovedToNewChunk = (x: number, y: number) => {
 	return false
 }
 
-export const removeTilesOutOfView = (container: Container) => {
-	for (let i = container.children.length - 1; i >= 0; i--) {
-		const tile = container.children[i]
-		const { width, height } = tile
-		const { x, y } = tile.getGlobalPosition()
-
-		if (!isContainerWithInView(x, y, width, height)) {
-			tile.removeFromParent()
-		}
-	}
-}
+// export const removeTilesOutOfView = (container: Container) => {
+// 	for (let i = container.children.length - 1; i >= 0; i--) {
+// 		const tile = container.children[i]
+// 		const { width, height } = tile
+// 		const { x, y } = tile.getGlobalPosition()
+//
+// 		if (!isContainerWithInView(x, y, width, height)) {
+// 			tile.removeFromParent()
+// 		}
+// 	}
+// }
 
 export const getGlobalPositionFromNoneStagedTile = (parent: Container, x: number, y: number) => {
 	const globalParent = parent.getGlobalPosition()
@@ -113,6 +113,13 @@ export const getChunkKey = (row: number, col: number) => {
 	return `${chunkX}_${chunkY}`
 }
 
+export const screenToIsoPos = (x: number, y: number) => {
+	const xPos = Math.floor((x / TILE_WIDTH_HALF + y / TILE_HEIGHT_HALF) / 2)
+	const yPos = Math.floor((y / TILE_HEIGHT_HALF - x / TILE_WIDTH_HALF) / 2)
+
+	return { x: xPos, y: yPos }
+}
+
 export const getVisibleChunks = (world: Container, chunks: Chunks) => {
 	const keys: string[] = []
 	const selectedChunks: Chunks = new Map()
@@ -120,9 +127,7 @@ export const getVisibleChunks = (world: Container, chunks: Chunks) => {
 	const worldX = -world.x
 	const worldY = -world.y
 
-	// Isometric position projection
-	const x = Math.floor((worldX / TILE_WIDTH_HALF + worldY / TILE_HEIGHT_HALF) / 2)
-	const y = Math.floor((worldY / TILE_HEIGHT_HALF - worldX / TILE_WIDTH_HALF) / 2)
+	const { x, y } = screenToIsoPos(worldX, worldY)
 
 	const col = Math.floor(x / CHUNK_SIZE)
 	const row = Math.floor(y / CHUNK_SIZE)

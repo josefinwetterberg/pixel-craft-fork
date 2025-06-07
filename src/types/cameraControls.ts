@@ -20,5 +20,4 @@ export type Viewport = {
 	isMoveable: boolean
 	pointerEvents: ViewportPointerEvent[]
 	border: Border
-	renderBorder: Border
 }

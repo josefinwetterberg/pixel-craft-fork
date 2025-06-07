@@ -1,17 +1,16 @@
 import { Application, Container, Culler, Rectangle } from 'pixi.js'
-import {
-	handlePointerDown,
-	handlePointerMove,
-	handlePointerUp,
-	hasCameraMovement,
-	setCameraBorder,
-	updateCameraMomentum,
-	viewport
-} from './core/cameraControls'
+import { setCameraBorder } from './core/cameraControls'
 import { drawGroundTiles } from './core/groundTiles'
-import { setInitalPrevRenderPos, updateVisibleChunks } from './core/tiles'
+import { updateVisibleChunks } from './core/tiles'
 import { loadAllinitialAssets, PERLIN } from './core/assets'
 import { getPerlinNoise } from './lib/utils/perlinNoise'
+import {
+	createPlayer,
+	isPlayerMoving,
+	movePlayerPosition,
+	registerPlayerMovement,
+	removePlayerMovement
+} from './core/player'
 
 const init = async () => {
 	const app = new Application()
@@ -22,14 +21,9 @@ const init = async () => {
 	document.body.appendChild(app.canvas)
 	// @ts-ignore
 	globalThis.__PIXI_APP__ = app
+	app.ticker.maxFPS = 60
 
-	const { renderBorder } = viewport
-	const view = new Rectangle(
-		renderBorder.x,
-		renderBorder.y,
-		renderBorder.width,
-		renderBorder.height
-	)
+	const view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
 
 	await loadAllinitialAssets()
 
@@ -41,26 +35,24 @@ const init = async () => {
 		label: 'world'
 	})
 
-	setInitalPrevRenderPos(world)
-
 	app.stage.addChild(world)
 
-	world.on('pointerdown', (ev) => handlePointerDown(ev))
-	world.on('pointermove', (ev) => handlePointerMove(ev, ground, world))
-	window.addEventListener('pointerup', (ev) => handlePointerUp(ev))
-
 	const chunks = drawGroundTiles(perlin)
-
 	const ground = new Container({ label: 'ground' })
 	updateVisibleChunks(world, ground, chunks)
 	world.addChild(ground)
 
 	setCameraBorder(ground)
 
-	app.ticker.add(() => {
-		updateCameraMomentum(world, ground)
+	const player = createPlayer()
+	world.addChild(player)
+	window.addEventListener('keydown', registerPlayerMovement)
+	window.addEventListener('keyup', removePlayerMovement)
 
-		if (hasCameraMovement()) {
+	app.ticker.add((ticker) => {
+		movePlayerPosition(player, world, ticker)
+
+		if (isPlayerMoving()) {
 			updateVisibleChunks(world, ground, chunks)
 		}
 
