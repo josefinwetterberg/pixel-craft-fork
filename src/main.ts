@@ -1,5 +1,4 @@
 import { Application, Container, Culler, Rectangle } from 'pixi.js'
-import { setCameraBorder } from './core/cameraControls'
 import { drawGroundTiles } from './core/groundTiles'
 import { updateVisibleChunks } from './core/tiles'
 import { loadAllinitialAssets, PERLIN } from './core/assets'
@@ -41,8 +40,6 @@ const init = async () => {
 	const ground = new Container({ label: 'ground' })
 	updateVisibleChunks(world, ground, chunks)
 	world.addChild(ground)
-
-	setCameraBorder(ground)
 
 	const player = createPlayer()
 	world.addChild(player)

@@ -9,7 +9,7 @@ import {
 
 export const PLAYER_WIDTH = 32
 export const PLAYER_HEIGHT = 64
-export const PLAYER_SPEED = 4
+export const PLAYER_SPEED = 8
 
 const allowedKeys = ['w', 'a', 's', 'd']
 const playerMovementKeys = new Set<string>()
@@ -65,7 +65,6 @@ export const movePlayerPosition = (player: Container, world: Container, ticker: 
 	if (!isPlayerMoving()) return
 
 	// We invert the momvent on the player to keep in in the center
-	// We multiple distnace with 2 on x axis since the tiles are 2x width then height
 
 	const distance = ticker.deltaTime * PLAYER_SPEED
 
@@ -75,8 +74,8 @@ export const movePlayerPosition = (player: Container, world: Container, ticker: 
 	}
 
 	if (playerMovementKeys.has('a')) {
-		world.x += distance * 2
-		player.x -= distance * 2
+		world.x += distance
+		player.x -= distance
 	}
 
 	if (playerMovementKeys.has('s')) {
@@ -85,7 +84,7 @@ export const movePlayerPosition = (player: Container, world: Container, ticker: 
 	}
 
 	if (playerMovementKeys.has('d')) {
-		world.x -= distance * 2
-		player.x += distance * 2
+		world.x -= distance
+		player.x += distance
 	}
 }

@@ -51,32 +51,3 @@ export const drawGroundTiles = (perlin: PerlinNoise | undefined) => {
 
 	return chunks
 }
-
-export const isGroundWithInBorder = (ground: Container) => {
-	ground
-
-	return {
-		y2: true,
-		y1: true,
-		x2: true,
-		x1: true
-	}
-
-	// const { x, y } = ground.getGlobalPosition()
-	// const { border } = viewport
-
-	// const halfWindowHeight = window.innerHeight / 2
-	// const halfWindowWidth = window.innerWidth / 2
-	// const halfGroundHeight = ground.height / 2
-	// const halfGroundWidth = ground.width / 2
-
-	// const xScale = x + halfGroundWidth
-	// const yScale = y + halfGroundHeight
-
-	// return {
-	// 	y2: yScale - halfWindowHeight > border.y1, // Bottom
-	// 	y1: yScale + halfWindowHeight < border.y2, // Top
-	// 	x2: xScale - halfWindowWidth > border.x1, // Right
-	// 	x1: xScale + halfWindowWidth < border.x2 // Left
-	// }
-}
