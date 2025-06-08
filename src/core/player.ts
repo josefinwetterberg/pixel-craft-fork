@@ -62,8 +62,6 @@ export const isPlayerMoving = () => {
 }
 
 export const movePlayerPosition = (player: Container, world: Container, ticker: Ticker) => {
-	if (!isPlayerMoving()) return
-
 	// We invert the momvent on the player to keep in in the center
 
 	const distance = ticker.deltaTime * PLAYER_SPEED
@@ -74,8 +72,8 @@ export const movePlayerPosition = (player: Container, world: Container, ticker: 
 	}
 
 	if (playerMovementKeys.has('a')) {
-		world.x += distance
-		player.x -= distance
+		world.x += distance * 2
+		player.x -= distance * 2
 	}
 
 	if (playerMovementKeys.has('s')) {
@@ -84,7 +82,7 @@ export const movePlayerPosition = (player: Container, world: Container, ticker: 
 	}
 
 	if (playerMovementKeys.has('d')) {
-		world.x -= distance
-		player.x += distance
+		world.x -= distance * 2
+		player.x += distance * 2
 	}
 }

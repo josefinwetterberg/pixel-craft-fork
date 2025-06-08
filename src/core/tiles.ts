@@ -1,5 +1,8 @@
-import { Container } from 'pixi.js'
+import { Container, Sprite } from 'pixi.js'
 import { Chunks, TileCallback } from '../types/tiles'
+import { getCellFromKey } from '../lib/utils/chunks'
+import { getPerlinNoise } from '../lib/utils/perlinNoise'
+import { ASSETS } from './assets'
 
 export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
@@ -9,6 +12,11 @@ export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
 export const CHUNK_SIZE = 64
 export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
+
+export const PERLIN_GROUND_WATER_THRESHOLD = 0.15
+export const WATER_LEVEL = TILE_HEIGHT - 15
+
+const chunks: Chunks = new Map()
 
 export const loopTiles = <T>(width: number, height: number, callback: TileCallback<T>): T[] => {
 	const results: T[] = []
@@ -20,6 +28,52 @@ export const loopTiles = <T>(width: number, height: number, callback: TileCallba
 	}
 
 	return results
+}
+
+export const createTiles = (keys: string[]) => {
+	for (const key of keys) {
+		const cellValue = getCellFromKey(key)
+		const perlin = getPerlinNoise(cellValue.col, cellValue.row)
+
+		loopTiles(CHUNK_SIZE, CHUNK_SIZE, (row, col) => {
+			const currentRow = cellValue.row * CHUNK_SIZE + row
+			const currentCol = cellValue.col * CHUNK_SIZE + col
+
+			if (perlin[row] === undefined || perlin[row][col] === undefined) {
+				return
+			}
+
+			const { xPosTile, yPosTile } = getIsometricTilePositions(
+				currentRow,
+				currentCol,
+				TILE_WIDTH_HALF,
+				TILE_HEIGHT_HALF
+			)
+
+			const isTileWater = perlin[row][col] < PERLIN_GROUND_WATER_THRESHOLD
+
+			const spriteTileHeight = isTileWater ? TILE_HEIGHT : TILE_HEIGHT * 2
+
+			const x = xPosTile - TILE_WIDTH_HALF
+			const y = isTileWater ? yPosTile + WATER_LEVEL : yPosTile
+
+			const texture = isTileWater ? ASSETS.WATER_BLOCK_TEXTURE : ASSETS.GROUND_BLOCK_TEXTURE
+			const sprite = Sprite.from(texture)
+			sprite.width = TILE_WIDTH
+			sprite.height = spriteTileHeight
+			sprite.x = x
+			sprite.y = y
+
+			if (!chunks.has(key)) {
+				chunks.set(
+					key,
+					new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
+				)
+			}
+
+			chunks.get(key)?.addChild(sprite)
+		})
+	}
 }
 
 export const getIsometricTilePositions = (
@@ -43,13 +97,6 @@ export const getGlobalPositionFromNoneStagedTile = (parent: Container, x: number
 	}
 }
 
-export const getChunkKey = (row: number, col: number) => {
-	const chunkX = Math.floor(col / CHUNK_SIZE)
-	const chunkY = Math.floor(row / CHUNK_SIZE)
-
-	return `${chunkX}_${chunkY}`
-}
-
 export const screenToIsoPos = (x: number, y: number) => {
 	const xPos = Math.floor((x / TILE_WIDTH_HALF + y / TILE_HEIGHT_HALF) / 2)
 	const yPos = Math.floor((y / TILE_HEIGHT_HALF - x / TILE_WIDTH_HALF) / 2)
@@ -57,9 +104,8 @@ export const screenToIsoPos = (x: number, y: number) => {
 	return { x: xPos, y: yPos }
 }
 
-export const getVisibleChunks = (world: Container, chunks: Chunks) => {
+export const getVisibleChunkKeys = (world: Container) => {
 	const keys: string[] = []
-	const selectedChunks: Chunks = new Map()
 
 	const worldX = -world.x
 	const worldY = -world.y
@@ -71,29 +117,42 @@ export const getVisibleChunks = (world: Container, chunks: Chunks) => {
 
 	for (let chunkY = row - 1; chunkY <= row + 1; chunkY++) {
 		for (let chunkX = col - 1; chunkX <= col + 1; chunkX++) {
-			const key = `${chunkX}_${chunkY}`
-			const chunk = chunks.get(key)
-
-			if (chunk) {
-				selectedChunks.set(key, chunk)
-				keys.push(key)
-			}
+			keys.push(`${chunkX}_${chunkY}`)
 		}
 	}
 
-	return { keys, chunks: selectedChunks }
+	return keys
 }
 
-export const updateVisibleChunks = (world: Container, ground: Container, chunks: Chunks) => {
-	const visibleChunks = getVisibleChunks(world, chunks)
+export const getVisibleChunks = (keys: string[]) => {
+	const selectedChunks: Chunks = new Map()
 
-	const childrenToRemove = ground.children.filter((chunk) => !visibleChunks.chunks.has(chunk.label))
+	for (const key of keys) {
+		const chunk = chunks.get(key)
+
+		if (chunk) {
+			selectedChunks.set(key, chunk)
+		}
+	}
+
+	return selectedChunks
+}
+
+export const updateVisibleChunks = (world: Container, ground: Container) => {
+	const keys = getVisibleChunkKeys(world)
+
+	const newChunkKeys = keys.filter((key) => !chunks.has(key))
+	createTiles(newChunkKeys)
+
+	const visibleChunks = getVisibleChunks(keys)
+
+	const childrenToRemove = ground.children.filter((chunk) => !visibleChunks.has(chunk.label))
 	ground.removeChild(...childrenToRemove)
 
 	const currentGroundChunks = new Set(ground.children.map((chunk) => chunk.label))
-	for (const key of visibleChunks.keys) {
+	for (const key of keys) {
 		if (!currentGroundChunks.has(key)) {
-			const chunk = visibleChunks.chunks.get(key)
+			const chunk = visibleChunks.get(key)
 			if (chunk) {
 				ground.addChild(chunk)
 			}

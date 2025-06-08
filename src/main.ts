@@ -1,8 +1,6 @@
 import { Application, Container, Culler, Rectangle } from 'pixi.js'
-import { drawGroundTiles } from './core/groundTiles'
 import { updateVisibleChunks } from './core/tiles'
-import { loadAllinitialAssets, PERLIN } from './core/assets'
-import { getPerlinNoise } from './lib/utils/perlinNoise'
+import { loadAllinitialAssets } from './core/assets'
 import {
 	createPlayer,
 	isPlayerMoving,
@@ -26,8 +24,6 @@ const init = async () => {
 
 	await loadAllinitialAssets()
 
-	const perlin = getPerlinNoise(PERLIN.PERLIN_GROUND_MAP)
-
 	const world = new Container({
 		isRenderGroup: true,
 		eventMode: 'static',
@@ -36,9 +32,8 @@ const init = async () => {
 
 	app.stage.addChild(world)
 
-	const chunks = drawGroundTiles(perlin)
 	const ground = new Container({ label: 'ground' })
-	updateVisibleChunks(world, ground, chunks)
+	updateVisibleChunks(world, ground)
 	world.addChild(ground)
 
 	const player = createPlayer()
@@ -50,7 +45,7 @@ const init = async () => {
 		movePlayerPosition(player, world, ticker)
 
 		if (isPlayerMoving()) {
-			updateVisibleChunks(world, ground, chunks)
+			updateVisibleChunks(world, ground)
 		}
 
 		Culler.shared.cull(world, view)

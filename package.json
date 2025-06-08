@@ -9,10 +9,12 @@
 		"preview": "vite preview"
 	},
 	"devDependencies": {
+		"@types/noisejs": "^2.1.0",
 		"typescript": "~5.6.2",
 		"vite": "^6.0.1"
 	},
 	"dependencies": {
+		"noisejs": "^2.1.0",
 		"pixi.js": "^8.6.4",
 		"prettier": "^3.4.2"
 	}
