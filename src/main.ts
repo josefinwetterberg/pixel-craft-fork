@@ -8,6 +8,7 @@ import {
 	registerPlayerMovement,
 	removePlayerMovement
 } from './core/player'
+import { handleWindowResize } from './lib/utils/window'
 
 const init = async () => {
 	const app = new Application()
@@ -50,6 +51,8 @@ const init = async () => {
 
 		Culler.shared.cull(world, view)
 	})
+
+	window.addEventListener('resize', () => handleWindowResize(world))
 }
 
 window.addEventListener('DOMContentLoaded', init)
