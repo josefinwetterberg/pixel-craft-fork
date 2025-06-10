@@ -14,6 +14,7 @@ export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
 
 export const PERLIN_GROUND_WATER_THRESHOLD = 0.15
+export const PERLIN_GROUND_SAND_THRESHOLD = 0.18
 export const DIRT_WATER_LEVEL = TILE_HEIGHT
 export const WATER_LEVEL = 15
 export const WATER_TRANSPARENCY = 0.65
@@ -53,13 +54,21 @@ export const createTiles = (keys: string[]) => {
 			)
 
 			const isTileWater = perlin[row][col] < PERLIN_GROUND_WATER_THRESHOLD
+			const isTileSand =
+				perlin[row][col] < PERLIN_GROUND_SAND_THRESHOLD &&
+				perlin[row][col] >= PERLIN_GROUND_WATER_THRESHOLD
 
-			const spriteTileHeight = isTileWater ? TILE_HEIGHT : TILE_HEIGHT * 2
+			const spriteTileHeight = isTileWater && !isTileSand ? TILE_HEIGHT : TILE_HEIGHT * 2
 
 			const x = xPosTile - TILE_WIDTH_HALF
-			const y = isTileWater ? yPosTile + WATER_LEVEL : yPosTile
+			const y = isTileWater && !isTileSand ? yPosTile + WATER_LEVEL : yPosTile
 
-			const texture = isTileWater ? ASSETS.WATER_BLOCK_TEXTURE : ASSETS.GRASS_BLOCK
+			const texture =
+				isTileWater && !isTileSand
+					? ASSETS.WATER_BLOCK_TEXTURE
+					: isTileSand
+						? ASSETS.SAND_BLOCK
+						: ASSETS.GRASS_BLOCK
 			const sprite = Sprite.from(texture)
 			sprite.width = TILE_WIDTH
 			sprite.height = spriteTileHeight
