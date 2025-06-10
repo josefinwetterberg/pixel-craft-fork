@@ -14,7 +14,9 @@ export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
 
 export const PERLIN_GROUND_WATER_THRESHOLD = 0.15
-export const WATER_LEVEL = TILE_HEIGHT - 15
+export const DIRT_WATER_LEVEL = TILE_HEIGHT
+export const WATER_LEVEL = 15
+export const WATER_TRANSPARENCY = 0.65
 
 const chunks: Chunks = new Map()
 
@@ -57,7 +59,7 @@ export const createTiles = (keys: string[]) => {
 			const x = xPosTile - TILE_WIDTH_HALF
 			const y = isTileWater ? yPosTile + WATER_LEVEL : yPosTile
 
-			const texture = isTileWater ? ASSETS.WATER_BLOCK_TEXTURE : ASSETS.GROUND_BLOCK_TEXTURE
+			const texture = isTileWater ? ASSETS.WATER_BLOCK_TEXTURE : ASSETS.GRASS_BLOCK
 			const sprite = Sprite.from(texture)
 			sprite.width = TILE_WIDTH
 			sprite.height = spriteTileHeight
@@ -69,6 +71,17 @@ export const createTiles = (keys: string[]) => {
 					key,
 					new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
 				)
+			}
+
+			if (isTileWater) {
+				sprite.alpha = WATER_TRANSPARENCY
+
+				const waterFloor = Sprite.from(ASSETS.DIRT_BLOCK)
+				waterFloor.width = TILE_WIDTH
+				waterFloor.height = spriteTileHeight
+				waterFloor.x = x
+				waterFloor.y = yPosTile + DIRT_WATER_LEVEL
+				chunks.get(key)?.addChild(waterFloor)
 			}
 
 			chunks.get(key)?.addChild(sprite)
