@@ -7,12 +7,12 @@ import {
 	TILE_WIDTH_HALF
 } from './tiles'
 
-export const PLAYER_WIDTH = 32
-export const PLAYER_HEIGHT = 64
+export const PLAYER_WIDTH = 48
+export const PLAYER_HEIGHT = 96
 export const PLAYER_SPEED = 8
 
 const allowedKeys = ['w', 'a', 's', 'd']
-const playerMovementKeys = new Set<string>()
+const playerMovementKeys = new Set<string>([])
 
 const centerPlayerToCenterTile = () => {
 	const xPos = window.innerWidth / 2
@@ -30,7 +30,7 @@ const centerPlayerToCenterTile = () => {
 export const createPlayer = () => {
 	const { x, y } = centerPlayerToCenterTile()
 
-	const player = Sprite.from(ASSETS.CHARACTER_BOB)
+	const player = Sprite.from(ASSETS.PLAYER)
 	player.anchor.set(0, 1) // Left Bottom
 	player.label = 'player'
 	player.x = x
