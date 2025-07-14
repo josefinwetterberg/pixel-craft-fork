@@ -1,6 +1,6 @@
-import { Assets, Texture } from 'pixi.js'
+import { Assets, Spritesheet } from 'pixi.js'
 
-export const ASSETS: Record<string, Texture> = {}
+export const ASSETS: Record<string, Spritesheet> = {}
 export const PERLIN: Record<string, HTMLImageElement> = {}
 
 export const loadAllinitialAssets = async () => {
@@ -11,5 +11,5 @@ export const loadAllinitialAssets = async () => {
 	ASSETS.SAND_BLOCK = await Assets.load('/game/ground/sand_block.png')
 
 	// Player assets
-	ASSETS.PLAYER = await Assets.load('/game/character/player.png')
+	ASSETS.PLAYER = await Assets.load('/game/character/player.json')
 }
