@@ -52,35 +52,29 @@ export const createTiles = (keys: string[]) => {
 				TILE_HEIGHT_HALF
 			)
 
-			const isTileWater = perlin[row][col] > PERLIN_GROUND_WATER_THRESHOLD
-			const spriteTileHeight = isTileWater ? TILE_HEIGHT : TILE_HEIGHT * 2
-
 			const x = xPosTile - TILE_WIDTH_HALF
-			const y = isTileWater ? yPosTile + WATER_LEVEL : yPosTile
+			const y = yPosTile
 
-			const texture = isTileWater ? ASSETS.WATER_BLOCK_TEXTURE : ASSETS.GRASS_BLOCK
-			const sprite = Sprite.from(texture)
-			sprite.width = TILE_WIDTH
-			sprite.height = spriteTileHeight
-			sprite.x = x
-			sprite.y = y
+			const sprite = new Sprite({
+				width: TILE_WIDTH,
+				height: TILE_HEIGHT * 2, // Dubble the height since we have walls on some block but this does not effect the position only the texture
+				x: x,
+				y: y
+			})
+
+			if (ASSETS.BLOCKS) {
+				const grass = ASSETS.BLOCKS.animations['grass'][0]
+				const water = ASSETS.BLOCKS.animations['water'][0]
+
+				const isTileWater = perlin[row][col] > PERLIN_GROUND_WATER_THRESHOLD
+				sprite.texture = isTileWater ? water : grass
+			}
 
 			if (!chunks.has(key)) {
 				chunks.set(
 					key,
 					new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
 				)
-			}
-
-			if (isTileWater) {
-				sprite.alpha = WATER_TRANSPARENCY
-
-				const waterFloor = Sprite.from(ASSETS.DIRT_BLOCK)
-				waterFloor.width = TILE_WIDTH
-				waterFloor.height = spriteTileHeight
-				waterFloor.x = x
-				waterFloor.y = yPosTile + DIRT_WATER_LEVEL
-				chunks.get(key)?.addChild(waterFloor)
 			}
 
 			chunks.get(key)?.addChild(sprite)

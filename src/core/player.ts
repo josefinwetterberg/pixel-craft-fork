@@ -1,4 +1,4 @@
-import { Container, Sprite, Ticker } from 'pixi.js'
+import { Assets, Container, Sprite, Ticker } from 'pixi.js'
 import { ASSETS } from './assets'
 import {
 	getIsometricTilePositions,
@@ -94,8 +94,10 @@ export const registerPlayerMovement = (ev: KeyboardEvent, player: Sprite) => {
 	if (allowedKeys.includes(key) && !playerMovementKeys.has(key)) {
 		playerMovementKeys.add(key)
 		animationKey = getPlayerAnimationKey(playerMovementKeys)
-		player.texture = ASSETS.PLAYER.animations[animationKey][0]
-		currentFrame = 0
+		if (ASSETS.PLAYER) {
+			player.texture = ASSETS.PLAYER.animations[animationKey][0]
+			currentFrame = 0
+		}
 	}
 }
 
@@ -105,9 +107,10 @@ export const removePlayerMovement = (ev: KeyboardEvent, player: Sprite) => {
 	if (allowedKeys.includes(key) && playerMovementKeys.has(key)) {
 		playerMovementKeys.delete(key)
 		animationKey = getPlayerAnimationKey(playerMovementKeys)
-		player.texture = ASSETS.PLAYER.animations[animationKey][0]
-		animationKey = getPlayerAnimationKey(playerMovementKeys)
-		currentFrame = 0
+		if (ASSETS.PLAYER) {
+			player.texture = ASSETS.PLAYER.animations[animationKey][0]
+			currentFrame = 0
+		}
 	}
 }
 
