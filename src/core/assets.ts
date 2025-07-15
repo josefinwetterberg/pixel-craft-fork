@@ -8,7 +8,7 @@ export const loadAllinitialAssets = async () => {
 	ASSETS.GRASS_BLOCK = await Assets.load('/game/ground/basic_block.png')
 	ASSETS.DIRT_BLOCK = await Assets.load('/game/ground/basic_dirt_block.png')
 	ASSETS.WATER_BLOCK_TEXTURE = await Assets.load('/game/ground/water.png')
-	ASSETS.SAND_BLOCK = await Assets.load('/game/ground/sand_block.png')
+	// ASSETS.SAND_BLOCK = await Assets.load('/game/ground/sand_block.png')
 
 	// Player assets
 	ASSETS.PLAYER = await Assets.load('/game/character/player.json')
