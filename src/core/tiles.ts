@@ -1,8 +1,9 @@
 import { Container, Sprite } from 'pixi.js'
 import { Chunks, TileCallback } from '../types/tiles'
 import { getCellFromKey } from '../lib/utils/chunks'
-import { getPerlinNoise } from '../lib/utils/perlinNoise'
+import { getPerlinAroundCell, getPerlinNoise } from '../lib/utils/perlinNoise'
 import { ASSETS } from './assets'
+import { getWaterTextureFromPerlin, PERLIN_GROUND_WATER_THRESHOLD } from './water'
 
 export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
@@ -12,11 +13,6 @@ export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
 export const CHUNK_SIZE = 64
 export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
-
-export const PERLIN_GROUND_WATER_THRESHOLD = 0.15
-export const DIRT_WATER_LEVEL = TILE_HEIGHT
-export const WATER_LEVEL = 15
-export const WATER_TRANSPARENCY = 0.65
 
 const chunks: Chunks = new Map()
 
@@ -41,10 +37,6 @@ export const createTiles = (keys: string[]) => {
 			const currentRow = cellValue.row * CHUNK_SIZE + row
 			const currentCol = cellValue.col * CHUNK_SIZE + col
 
-			if (perlin[row] === undefined || perlin[row][col] === undefined) {
-				return
-			}
-
 			const { xPosTile, yPosTile } = getIsometricTilePositions(
 				currentRow,
 				currentCol,
@@ -63,11 +55,15 @@ export const createTiles = (keys: string[]) => {
 			})
 
 			if (ASSETS.BLOCKS) {
-				const grass = ASSETS.BLOCKS.animations['grass'][0]
-				const water = ASSETS.BLOCKS.animations['water'][0]
+				sprite.texture = ASSETS.BLOCKS.animations['grass'][0]
 
-				const isTileWater = perlin[row][col] > PERLIN_GROUND_WATER_THRESHOLD
-				sprite.texture = isTileWater ? water : grass
+				const isTileWater = perlin[row][col] >= PERLIN_GROUND_WATER_THRESHOLD
+				if (isTileWater) {
+					const perlinArea = getPerlinAroundCell(xPosTile, yPosTile)
+					const water = getWaterTextureFromPerlin(perlinArea)
+
+					sprite.texture = water
+				}
 			}
 
 			if (!chunks.has(key)) {
@@ -103,7 +99,7 @@ export const getGlobalPositionFromNoneStagedTile = (parent: Container, x: number
 	}
 }
 
-export const screenToIsoPos = (x: number, y: number) => {
+export const isoPosToWorldPos = (x: number, y: number) => {
 	const xPos = Math.floor((x / TILE_WIDTH_HALF + y / TILE_HEIGHT_HALF) / 2)
 	const yPos = Math.floor((y / TILE_HEIGHT_HALF - x / TILE_WIDTH_HALF) / 2)
 
@@ -116,7 +112,7 @@ export const getVisibleChunkKeys = (world: Container) => {
 	const worldX = -world.x
 	const worldY = -world.y
 
-	const { x, y } = screenToIsoPos(worldX, worldY)
+	const { x, y } = isoPosToWorldPos(worldX, worldY)
 
 	const col = Math.floor(x / CHUNK_SIZE)
 	const row = Math.floor(y / CHUNK_SIZE)

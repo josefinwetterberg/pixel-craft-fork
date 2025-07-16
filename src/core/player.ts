@@ -1,8 +1,8 @@
-import { Assets, Container, Sprite, Ticker } from 'pixi.js'
+import { Container, Sprite, Ticker } from 'pixi.js'
 import { ASSETS } from './assets'
 import {
 	getIsometricTilePositions,
-	screenToIsoPos,
+	isoPosToWorldPos,
 	TILE_HEIGHT_HALF,
 	TILE_WIDTH_HALF
 } from './tiles'
@@ -63,7 +63,7 @@ const getPlayerAnimationKey = (keys: Set<string>) => {
 const centerPlayerToCenterTile = () => {
 	const xPos = window.innerWidth / 2
 	const yPos = window.innerHeight / 2
-	const { x, y } = screenToIsoPos(xPos, yPos)
+	const { x, y } = isoPosToWorldPos(xPos, yPos)
 
 	const { yPosTile, xPosTile } = getIsometricTilePositions(y, x, TILE_WIDTH_HALF, TILE_HEIGHT_HALF)
 
@@ -75,15 +75,18 @@ const centerPlayerToCenterTile = () => {
 
 export const createPlayer = () => {
 	const { x, y } = centerPlayerToCenterTile()
-	const texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
 
-	const player = Sprite.from(texture)
+	const player = new Sprite()
 	player.anchor.set(0, 1) // Left Bottom
 	player.label = 'player'
 	player.x = x
 	player.y = y
 	player.width = PLAYER_WIDTH
 	player.height = PLAYER_HEIGHT
+
+	if (ASSETS.PLAYER) {
+		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
+	}
 
 	return player
 }
@@ -148,6 +151,8 @@ export const movePlayerPosition = (player: Sprite, world: Container, ticker: Tic
 	if (animationTimer >= animationSpeed && playerMovementKeys.size > 0) {
 		animationTimer = 0
 		currentFrame = (currentFrame + 1) % PLAYER_FRAME_LENGTH
-		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
+		if (ASSETS.PLAYER) {
+			player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
+		}
 	}
 }

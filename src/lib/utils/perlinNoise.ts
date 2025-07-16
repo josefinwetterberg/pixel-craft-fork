@@ -1,11 +1,34 @@
 // @ts-ignore
 import { Noise } from 'noisejs'
-import { CHUNK_SIZE } from '../../core/tiles'
+import { CHUNK_SIZE, isoPosToWorldPos } from '../../core/tiles'
 
 const seed = 47208
 
-export const getPerlinNoise = (col: number, row: number) => {
+const generatePerlinNoise = (x: number, y: number) => {
 	const noise = new Noise(seed)
+	// Domain warping for realistic coastlines
+	const scale = 80
+	let frequency = 0.005
+	const warpX = noise.perlin2(x * frequency, y * frequency) * scale
+	const warpY = noise.perlin2((x + 1000) * frequency, y * frequency) * scale
+
+	// Multi-octave fractal noise
+	let value = 0
+	let amplitude = 1
+	frequency = 0.025
+
+	for (let octave = 0; octave < 6; octave++) {
+		const sampleX = (x + warpX) * frequency
+		const sampleY = (y + warpY) * frequency
+		value += noise.perlin2(sampleX, sampleY) * amplitude
+		amplitude *= 0.5
+		frequency *= 2
+	}
+
+	return value
+}
+
+export const getPerlinNoise = (col: number, row: number) => {
 	const chunkX = col * CHUNK_SIZE
 	const chunkY = row * CHUNK_SIZE
 	const values: number[][] = []
@@ -16,27 +39,28 @@ export const getPerlinNoise = (col: number, row: number) => {
 			const worldX = chunkX + x
 			const worldY = chunkY + y
 
-			// Domain warping for realistic coastlines
-			const scale = 80
-			let frequency = 0.005
-			const warpX = noise.perlin2(worldX * frequency, worldY * frequency) * scale
-			const warpY = noise.perlin2((worldX + 1000) * frequency, worldY * frequency) * scale
-
-			// Multi-octave fractal noise
-			let value = 0
-			let amplitude = 1
-			frequency = 0.025
-
-			for (let octave = 0; octave < 6; octave++) {
-				const sampleX = (worldX + warpX) * frequency
-				const sampleY = (worldY + warpY) * frequency
-				value += noise.perlin2(sampleX, sampleY) * amplitude
-				amplitude *= 0.5
-				frequency *= 2
-			}
-
+			const value = generatePerlinNoise(worldX, worldY)
 			row.push(value)
 		}
+		values.push(row)
+	}
+
+	return values
+}
+
+export const getPerlinAroundCell = (xPos: number, yPos: number) => {
+	const area = 1
+	const values: number[][] = []
+
+	const worldPos = isoPosToWorldPos(xPos, yPos)
+
+	for (let y = worldPos.y - area; y <= worldPos.y + area; y++) {
+		const row: number[] = []
+		for (let x = worldPos.x - area; x <= worldPos.x + area; x++) {
+			const col = generatePerlinNoise(x, y)
+			row.push(col)
+		}
+
 		values.push(row)
 	}
 
