@@ -780,6 +780,11 @@
 		"water-edge-two-bottom-right": ["water-edge-two-bottom-right.png"],
 		"water-edge-two-right-top": ["water-edge-two-right-top.png"],
 
+		"water-edge-three-top-left-bottom": ["water-edge-three-top-left-bottom.png"],
+		"water-edge-three-left-bottom-right": ["water-edge-three-left-bottom-right.png"],
+		"water-edge-three-bottom-right-top": ["water-edge-three-bottom-right-top.png"],
+		"water-edge-three-right-top-left": ["water-edge-three-right-top-left.png"],
+
 		"water-edge-full": ["water-edge-full.png"]
 	},
 	"meta": {

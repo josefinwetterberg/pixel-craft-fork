@@ -90,6 +90,26 @@ const waterPatterns: Record<string, number[][]> = {
 		[-1, -1, -1],
 		[1, -1, 1]
 	],
+	'water-edge-three-top-left-bottom': [
+		[1, -1, 0],
+		[-1, -1, -1],
+		[1, -1, 1]
+	],
+	'water-edge-three-left-bottom-right': [
+		[0, -1, 1],
+		[-1, -1, -1],
+		[1, -1, 1]
+	],
+	'water-edge-three-bottom-right-top': [
+		[1, -1, 1],
+		[-1, -1, -1],
+		[0, -1, 1]
+	],
+	'water-edge-three-right-top-left': [
+		[1, -1, 1],
+		[-1, -1, -1],
+		[1, -1, 0]
+	],
 	'water-edge-two-top-left': [
 		[1, -1, 0],
 		[-1, -1, -1],
