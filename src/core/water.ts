@@ -249,15 +249,17 @@ export const matchesPattern = (perlin: number[][], pattern: number[][]): boolean
 	return true
 }
 
-export const getWaterTextureFromPerlin = (perlin: number[][]): Texture<TextureSource<any>> => {
+export const getWaterTextureFromPerlin = (perlin: number[][]) => {
 	let water = ASSETS.BLOCKS?.animations['water'][0] as Texture<TextureSource<any>>
+	let matchedKey = ''
 
 	for (const [key, value] of Object.entries(waterPatterns)) {
 		if (matchesPattern(perlin, value) && ASSETS.BLOCKS) {
 			water = ASSETS.BLOCKS?.animations[key]?.[0] ?? water
+			matchedKey = key
 			break
 		}
 	}
 
-	return water
+	return { water, key: matchedKey }
 }

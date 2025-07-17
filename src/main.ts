@@ -1,5 +1,11 @@
 import { Application, Container, Culler, Rectangle } from 'pixi.js'
-import { updateVisibleChunks } from './core/tiles'
+import {
+	chunkCreationList,
+	createChunk,
+	setInitalTiles,
+	setNewChunksToRender,
+	updateVisibleChunks
+} from './core/tiles'
 import { loadAllinitialAssets } from './core/assets'
 import {
 	createPlayer,
@@ -10,18 +16,18 @@ import {
 } from './core/player'
 import { handleWindowResize } from './lib/utils/window'
 
+const view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
+
 const init = async () => {
 	const app = new Application()
 	await app.init({
 		resizeTo: window,
-		antialias: false
+		antialias: false,
+		background: '#4a80ff'
 	})
 	document.body.appendChild(app.canvas)
 	// @ts-ignore
 	globalThis.__PIXI_APP__ = app
-	app.ticker.maxFPS = 60
-
-	const view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
 
 	await loadAllinitialAssets()
 
@@ -34,7 +40,7 @@ const init = async () => {
 	app.stage.addChild(world)
 
 	const ground = new Container({ label: 'ground' })
-	updateVisibleChunks(world, ground)
+	setInitalTiles(world, ground)
 	world.addChild(ground)
 
 	const player = createPlayer()
@@ -43,9 +49,14 @@ const init = async () => {
 	window.addEventListener('keyup', (ev) => removePlayerMovement(ev, player))
 
 	app.ticker.add((ticker) => {
-		movePlayerPosition(player, world, ticker)
-
 		if (isPlayerMoving()) {
+			movePlayerPosition(player, world, ticker)
+			setNewChunksToRender(world)
+
+			if (chunkCreationList.length > 0) {
+				createChunk(chunkCreationList[0])
+			}
+
 			updateVisibleChunks(world, ground)
 		}
 

@@ -10,11 +10,14 @@ export const TILE_WIDTH_HALF = TILE_WIDTH / 2
 export const TILE_HEIGHT = 64
 export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
 
-export const CHUNK_SIZE = 64
+export const CHUNK_SIZE = 16
 export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
+export const DRAW_DISTANCE = 4
 
 const chunks: Chunks = new Map()
+export let chunkCreationList: string[] = []
+let currentChunk = ''
 
 export const loopTiles = <T>(width: number, height: number, callback: TileCallback<T>): T[] => {
 	const results: T[] = []
@@ -47,6 +50,8 @@ export const createTiles = (keys: string[]) => {
 			const x = xPosTile - TILE_WIDTH_HALF
 			const y = yPosTile
 
+			let isSpriteRenderable = true
+
 			const sprite = new Sprite({
 				width: TILE_WIDTH,
 				height: TILE_HEIGHT * 2, // Dubble the height since we have walls on some block but this does not effect the position only the texture
@@ -60,7 +65,12 @@ export const createTiles = (keys: string[]) => {
 				const isTileWater = perlin[row][col] >= PERLIN_GROUND_WATER_THRESHOLD
 				if (isTileWater) {
 					const perlinArea = getPerlinAroundCell(xPosTile, yPosTile)
-					const water = getWaterTextureFromPerlin(perlinArea)
+					const { water, key } = getWaterTextureFromPerlin(perlinArea)
+
+					// We have set the staged app background to the same color as the water so if the tile is the default water with no border then we can just skip rendering it and use the background instea insteadd
+					if (key === 'water') {
+						isSpriteRenderable = false
+					}
 
 					sprite.texture = water
 				}
@@ -73,7 +83,9 @@ export const createTiles = (keys: string[]) => {
 				)
 			}
 
-			chunks.get(key)?.addChild(sprite)
+			if (isSpriteRenderable) {
+				chunks.get(key)?.addChild(sprite)
+			}
 		})
 	}
 }
@@ -117,8 +129,8 @@ export const getVisibleChunkKeys = (world: Container) => {
 	const col = Math.floor(x / CHUNK_SIZE)
 	const row = Math.floor(y / CHUNK_SIZE)
 
-	for (let chunkY = row - 1; chunkY <= row + 1; chunkY++) {
-		for (let chunkX = col - 1; chunkX <= col + 1; chunkX++) {
+	for (let chunkY = row - DRAW_DISTANCE; chunkY <= row + DRAW_DISTANCE; chunkY++) {
+		for (let chunkX = col - DRAW_DISTANCE; chunkX <= col + DRAW_DISTANCE; chunkX++) {
 			keys.push(`${chunkX}_${chunkY}`)
 		}
 	}
@@ -140,11 +152,31 @@ export const getVisibleChunks = (keys: string[]) => {
 	return selectedChunks
 }
 
-export const updateVisibleChunks = (world: Container, ground: Container) => {
+export const setInitalTiles = (world: Container, ground: Container) => {
 	const keys = getVisibleChunkKeys(world)
 
 	const newChunkKeys = keys.filter((key) => !chunks.has(key))
 	createTiles(newChunkKeys)
+
+	ground.addChild(...chunks.values())
+}
+
+export const setNewChunksToRender = (world: Container) => {
+	const keys = getVisibleChunkKeys(world)
+	chunkCreationList = keys.filter((key) => !chunks.has(key) && !chunkCreationList.includes(key))
+}
+
+export const createChunk = (key: string) => {
+	if (currentChunk) return
+	currentChunk = key
+	createTiles([key])
+
+	chunkCreationList = chunkCreationList.filter((chunk) => chunk !== key)
+	setTimeout(() => (currentChunk = ''), 100) // Spacing chunk creation to not block player movment for an extended period of time
+}
+
+export const updateVisibleChunks = (world: Container, ground: Container) => {
+	const keys = getVisibleChunkKeys(world)
 
 	const visibleChunks = getVisibleChunks(keys)
 
