@@ -16,7 +16,7 @@ import {
 } from './core/player'
 import { handleWindowResize } from './lib/utils/window'
 
-const view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
+let view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
 
 const init = async () => {
 	const app = new Application()
@@ -63,7 +63,11 @@ const init = async () => {
 		Culler.shared.cull(world, view)
 	})
 
-	window.addEventListener('resize', () => handleWindowResize(world))
+	window.addEventListener('resize', () => {
+		handleWindowResize(world)
+
+		view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
+	})
 }
 
 window.addEventListener('DOMContentLoaded', init)
