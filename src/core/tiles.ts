@@ -13,9 +13,10 @@ export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
 export const CHUNK_SIZE = 16
 export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
-export const DRAW_DISTANCE = 4
+export const RENDER_DISTANCE = 4
+const MAX_STORED_CHUNKS = RENDER_DISTANCE * RENDER_DISTANCE * 16
 
-const chunks: Chunks = new Map()
+let chunks: Chunks = new Map()
 export let chunkCreationList: string[] = []
 let currentChunk = ''
 
@@ -129,8 +130,8 @@ export const getVisibleChunkKeys = (world: Container) => {
 	const col = Math.floor(x / CHUNK_SIZE)
 	const row = Math.floor(y / CHUNK_SIZE)
 
-	for (let chunkY = row - DRAW_DISTANCE; chunkY <= row + DRAW_DISTANCE; chunkY++) {
-		for (let chunkX = col - DRAW_DISTANCE; chunkX <= col + DRAW_DISTANCE; chunkX++) {
+	for (let chunkY = row - RENDER_DISTANCE; chunkY <= row + RENDER_DISTANCE; chunkY++) {
+		for (let chunkX = col - RENDER_DISTANCE; chunkX <= col + RENDER_DISTANCE; chunkX++) {
 			keys.push(`${chunkX}_${chunkY}`)
 		}
 	}
@@ -179,6 +180,11 @@ export const updateVisibleChunks = (world: Container, ground: Container) => {
 	const keys = getVisibleChunkKeys(world)
 
 	const visibleChunks = getVisibleChunks(keys)
+
+	// To prevent the memory of chunks getting to large we clear the tiles that are not in view
+	if (chunks.size >= MAX_STORED_CHUNKS) {
+		chunks = visibleChunks
+	}
 
 	const childrenToRemove = ground.children.filter((chunk) => !visibleChunks.has(chunk.label))
 	ground.removeChild(...childrenToRemove)
