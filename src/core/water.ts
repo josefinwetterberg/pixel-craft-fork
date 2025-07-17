@@ -12,7 +12,7 @@ const waterPatterns: Record<string, number[][]> = {
 	],
 	'water-single-edge-two-left-bottom': [
 		[0, 1, 0],
-		[-1, -1, 1],
+		[-1, -1, -1],
 		[1, -1, 1]
 	],
 	'water-single-edge-two-bottom-right': [
