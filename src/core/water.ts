@@ -10,6 +10,86 @@ const waterPatterns: Record<string, number[][]> = {
 		[-1, -1, -1],
 		[-1, -1, -1]
 	],
+	'water-single-edge-two-left-bottom': [
+		[0, 1, 0],
+		[-1, -1, 1],
+		[1, -1, 1]
+	],
+	'water-single-edge-two-bottom-right': [
+		[0, -1, 1],
+		[1, -1, -1],
+		[0, -1, 1]
+	],
+	'water-single-edge-two-right-top': [
+		[1, -1, 1],
+		[-1, -1, -1],
+		[0, 1, 0]
+	],
+	'water-single-edge-two-top-left': [
+		[1, -1, 0],
+		[-1, -1, 1],
+		[1, -1, 0]
+	],
+	'water-corner-edge-left': [
+		[0, 1, 0],
+		[-1, -1, 1],
+		[1, -1, 0]
+	],
+	'water-corner-edge-bottom': [
+		[0, 1, 0],
+		[1, -1, -1],
+		[0, -1, 1]
+	],
+	'water-corner-edge-right': [
+		[0, -1, 1],
+		[1, -1, -1],
+		[0, 1, 0]
+	],
+	'water-corner-edge-top': [
+		[1, -1, 0],
+		[-1, -1, 1],
+		[0, 1, 0]
+	],
+	'water-single-edge-one-left-left': [
+		[-1, -1, 0],
+		[-1, -1, 1],
+		[1, -1, 0]
+	],
+	'water-single-edge-one-left-bottom': [
+		[0, 1, 0],
+		[-1, -1, -1],
+		[-1, -1, 1]
+	],
+	'water-single-edge-one-left-right': [
+		[0, -1, 1],
+		[1, -1, -1],
+		[0, -1, -1]
+	],
+	'water-single-edge-one-left-top': [
+		[1, -1, -1],
+		[-1, -1, -1],
+		[0, 1, 0]
+	],
+	'water-single-edge-one-right-left': [
+		[0, 1, 0],
+		[-1, -1, -1],
+		[1, -1, -1]
+	],
+	'water-single-edge-one-right-bottom': [
+		[0, -1, -1],
+		[1, -1, -1],
+		[0, -1, 1]
+	],
+	'water-single-edge-one-right-right': [
+		[-1, -1, 1],
+		[-1, -1, -1],
+		[0, 1, 0]
+	],
+	'water-single-edge-one-right-top': [
+		[1, -1, 0],
+		[-1, -1, 1],
+		[-1, -1, 0]
+	],
 	'water-full': [
 		[0, 1, 0],
 		[1, -1, 1],
@@ -174,7 +254,7 @@ export const getWaterTextureFromPerlin = (perlin: number[][]): Texture<TextureSo
 
 	for (const [key, value] of Object.entries(waterPatterns)) {
 		if (matchesPattern(perlin, value) && ASSETS.BLOCKS) {
-			water = ASSETS.BLOCKS?.animations[key][0]
+			water = ASSETS.BLOCKS?.animations[key]?.[0] ?? water
 			break
 		}
 	}

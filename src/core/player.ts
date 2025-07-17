@@ -9,7 +9,7 @@ import {
 
 export const PLAYER_WIDTH = 32
 export const PLAYER_HEIGHT = 64
-export const PLAYER_SPEED = 8
+export const PLAYER_SPEED = 4
 const PLAYER_FRAME_LENGTH = 3
 
 const allowedKeys = ['w', 'a', 's', 'd']
