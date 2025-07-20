@@ -2,10 +2,10 @@
 import { Noise } from 'noisejs'
 import { CHUNK_SIZE, isoPosToWorldPos } from '../../core/tiles'
 
-const seed = 47208
+export const SEED = 47208
 
-const generatePerlinNoise = (x: number, y: number) => {
-	const noise = new Noise(seed)
+export const generatePerlinNoise = (x: number, y: number) => {
+	const noise = new Noise(SEED)
 	// Domain warping for realistic coastlines
 	const scale = 80
 	let frequency = 0.005

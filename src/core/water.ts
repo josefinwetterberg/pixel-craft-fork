@@ -263,3 +263,7 @@ export const getWaterTextureFromPerlin = (perlin: number[][]) => {
 
 	return { water, key: matchedKey }
 }
+
+export const isTileWater = (perlin: number) => {
+	return perlin >= PERLIN_GROUND_WATER_THRESHOLD
+}

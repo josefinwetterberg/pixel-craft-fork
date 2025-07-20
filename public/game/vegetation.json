@@ -1,0 +1,39 @@
+{
+	"frames": {
+		"oak-tree.png": {
+			"frame": {
+				"x": 0,
+				"y": 0,
+				"w": 192,
+				"h": 240
+			},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {
+				"x": 0,
+				"y": 0,
+				"w": 192,
+				"h": 240
+			},
+			"sourceSize": {
+				"w": 192,
+				"h": 240
+			},
+			"pivot": {
+				"x": 0.5,
+				"y": 0.5
+			}
+		}
+	},
+	"meta": {
+		"app": "http://free-tex-packer.com",
+		"version": "0.6.7",
+		"image": "vegetation.png",
+		"format": "RGBA8888",
+		"size": {
+			"w": 192,
+			"h": 240
+		},
+		"scale": 1
+	}
+}

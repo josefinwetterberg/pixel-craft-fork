@@ -39,9 +39,11 @@ const init = async () => {
 
 	app.stage.addChild(world)
 
+	const surface = new Container({ label: 'surface' })
+
 	const ground = new Container({ label: 'ground' })
-	setInitalTiles(world, ground)
-	world.addChild(ground)
+	setInitalTiles(world, ground, surface)
+	world.addChild(ground, surface)
 
 	const player = createPlayer()
 	world.addChild(player)
@@ -57,7 +59,7 @@ const init = async () => {
 				createChunk(chunkCreationList[0])
 			}
 
-			updateVisibleChunks(world, ground)
+			updateVisibleChunks(world, ground, surface)
 		}
 
 		Culler.shared.cull(world, view)

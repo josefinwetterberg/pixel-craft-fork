@@ -1,9 +1,9 @@
-import { Container, Sprite } from 'pixi.js'
+import { Container } from 'pixi.js'
 import { Chunks, TileCallback } from '../types/tiles'
 import { getCellFromKey } from '../lib/utils/chunks'
-import { getPerlinAroundCell, getPerlinNoise } from '../lib/utils/perlinNoise'
-import { ASSETS } from './assets'
-import { getWaterTextureFromPerlin, PERLIN_GROUND_WATER_THRESHOLD } from './water'
+import { getPerlinNoise } from '../lib/utils/perlinNoise'
+import { createGroundSprite } from './ground'
+import { createVegetationSprite } from './vegetation'
 
 export const TILE_WIDTH = 128
 export const TILE_WIDTH_HALF = TILE_WIDTH / 2
@@ -48,44 +48,22 @@ export const createTiles = (keys: string[]) => {
 				TILE_HEIGHT_HALF
 			)
 
-			const x = xPosTile - TILE_WIDTH_HALF
-			const y = yPosTile
-
-			let isSpriteRenderable = true
-
-			const sprite = new Sprite({
-				width: TILE_WIDTH,
-				height: TILE_HEIGHT * 2, // Dubble the height since we have walls on some block but this does not effect the position only the texture
-				x: x,
-				y: y
-			})
-
-			if (ASSETS.BLOCKS) {
-				sprite.texture = ASSETS.BLOCKS.animations['grass'][0]
-
-				const isTileWater = perlin[row][col] >= PERLIN_GROUND_WATER_THRESHOLD
-				if (isTileWater) {
-					const perlinArea = getPerlinAroundCell(xPosTile, yPosTile)
-					const { water, key } = getWaterTextureFromPerlin(perlinArea)
-
-					// We have set the staged app background to the same color as the water so if the tile is the default water with no border then we can just skip rendering it and use the background instea insteadd
-					if (key === 'water') {
-						isSpriteRenderable = false
-					}
-
-					sprite.texture = water
-				}
-			}
+			const groundSprite = createGroundSprite({ xPosTile, yPosTile, perlin, row, col })
 
 			if (!chunks.has(key)) {
-				chunks.set(
-					key,
-					new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
-				)
+				chunks.set(key, {
+					ground: new Container({ label: key, zIndex: currentRow + currentCol, cullable: true }),
+					vegetation: new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
+				})
 			}
 
-			if (isSpriteRenderable) {
-				chunks.get(key)?.addChild(sprite)
+			if (groundSprite) {
+				chunks.get(key)?.ground?.addChild(groundSprite)
+
+				const vegetationSprite = createVegetationSprite({ xPosTile, yPosTile, perlin, row, col })
+				if (vegetationSprite) {
+					chunks.get(key)?.vegetation?.addChild(vegetationSprite)
+				}
 			}
 		})
 	}
@@ -153,13 +131,16 @@ export const getVisibleChunks = (keys: string[]) => {
 	return selectedChunks
 }
 
-export const setInitalTiles = (world: Container, ground: Container) => {
+export const setInitalTiles = (world: Container, ground: Container, surface: Container) => {
 	const keys = getVisibleChunkKeys(world)
 
 	const newChunkKeys = keys.filter((key) => !chunks.has(key))
 	createTiles(newChunkKeys)
 
-	ground.addChild(...chunks.values())
+	for (const [_, chunk] of chunks) {
+		if (chunk.ground) ground.addChild(chunk.ground)
+		if (chunk.vegetation) surface.addChild(chunk.vegetation)
+	}
 }
 
 export const setNewChunksToRender = (world: Container) => {
@@ -176,7 +157,7 @@ export const createChunk = (key: string) => {
 	setTimeout(() => (currentChunk = ''), 100) // Spacing chunk creation to not block player movment for an extended period of time
 }
 
-export const updateVisibleChunks = (world: Container, ground: Container) => {
+export const updateVisibleChunks = (world: Container, ground: Container, surface: Container) => {
 	const keys = getVisibleChunkKeys(world)
 
 	const visibleChunks = getVisibleChunks(keys)
@@ -186,15 +167,22 @@ export const updateVisibleChunks = (world: Container, ground: Container) => {
 		chunks = visibleChunks
 	}
 
-	const childrenToRemove = ground.children.filter((chunk) => !visibleChunks.has(chunk.label))
-	ground.removeChild(...childrenToRemove)
+	const groundChunksToRemove = ground.children.filter((chunk) => !visibleChunks.has(chunk.label))
+	ground.removeChild(...groundChunksToRemove)
+
+	const surfaceChunksToRemove = ground.children.filter((chunk) => !visibleChunks.has(chunk.label))
+	surface.removeChild(...surfaceChunksToRemove)
 
 	const currentGroundChunks = new Set(ground.children.map((chunk) => chunk.label))
 	for (const key of keys) {
 		if (!currentGroundChunks.has(key)) {
 			const chunk = visibleChunks.get(key)
-			if (chunk) {
-				ground.addChild(chunk)
+			if (chunk?.ground) {
+				ground.addChild(chunk.ground)
+			}
+
+			if (chunk?.vegetation) {
+				surface.addChild(chunk.vegetation)
 			}
 		}
 	}
