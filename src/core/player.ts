@@ -1,11 +1,16 @@
-import { Container, Sprite, Ticker } from 'pixi.js'
+import { Container, ContainerChild, Sprite, Ticker } from 'pixi.js'
 import { ASSETS } from './assets'
 import {
+	getChunk,
+	getChunkByGlobalPosition,
+	getIsoCollisionSides,
 	getIsometricTilePositions,
 	isoPosToWorldPos,
 	TILE_HEIGHT_HALF,
 	TILE_WIDTH_HALF
 } from './tiles'
+import { Chunk } from '../types/tiles'
+import { getVegetationFromGround } from './vegetation'
 
 export const PLAYER_WIDTH = 32
 export const PLAYER_HEIGHT = 64
@@ -91,9 +96,7 @@ export const createPlayer = () => {
 	return player
 }
 
-export const registerPlayerMovement = (ev: KeyboardEvent, player: Sprite) => {
-	const { key } = ev
-
+export const registerPlayerMovement = (key: string, player: Sprite) => {
 	if (allowedKeys.includes(key) && !playerMovementKeys.has(key)) {
 		playerMovementKeys.add(key)
 		animationKey = getPlayerAnimationKey(playerMovementKeys)
@@ -104,9 +107,7 @@ export const registerPlayerMovement = (ev: KeyboardEvent, player: Sprite) => {
 	}
 }
 
-export const removePlayerMovement = (ev: KeyboardEvent, player: Sprite) => {
-	const { key } = ev
-
+export const removePlayerMovement = (key: string, player: Sprite) => {
 	if (allowedKeys.includes(key) && playerMovementKeys.has(key)) {
 		playerMovementKeys.delete(key)
 		animationKey = getPlayerAnimationKey(playerMovementKeys)
@@ -121,33 +122,7 @@ export const isPlayerMoving = () => {
 	return playerMovementKeys.size !== 0
 }
 
-export const movePlayerPosition = (player: Sprite, world: Container, ticker: Ticker) => {
-	// We invert the momvent on the player to keep in in the center
-
-	const distance = ticker.deltaTime * PLAYER_SPEED
-
-	animationTimer += ticker.deltaTime / 60
-
-	if (playerMovementKeys.has('w')) {
-		world.y += distance
-		player.y -= distance
-	}
-
-	if (playerMovementKeys.has('a')) {
-		world.x += distance * 2
-		player.x -= distance * 2
-	}
-
-	if (playerMovementKeys.has('s')) {
-		world.y -= distance
-		player.y += distance
-	}
-
-	if (playerMovementKeys.has('d')) {
-		world.x -= distance * 2
-		player.x += distance * 2
-	}
-
+const handlePlayeranimation = (player: Sprite) => {
 	if (animationTimer >= animationSpeed && playerMovementKeys.size > 0) {
 		animationTimer = 0
 		currentFrame = (currentFrame + 1) % PLAYER_FRAME_LENGTH
@@ -155,4 +130,101 @@ export const movePlayerPosition = (player: Sprite, world: Container, ticker: Tic
 			player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
 		}
 	}
+}
+
+const getAllActivePlayerTiles = (chunk: Chunk, player: Sprite) => {
+	const ground = chunk.ground?.children ?? []
+	const tiles: ContainerChild[] = []
+
+	// We only want to check if the bottom of the player is in a tile since there is where the feet are
+	for (const tile of ground) {
+		const cx = tile.x + TILE_WIDTH_HALF
+		const cy = tile.y + TILE_HEIGHT_HALF
+
+		// The anchor is set to bottom left of the player there for we dont have to add ane width or height
+		const dx = Math.abs(player.x - cx) / TILE_WIDTH_HALF
+		const dy = Math.abs(player.y - cy) / TILE_HEIGHT_HALF
+
+		const isInIsometricTile = dx + dy <= 1
+
+		if (isInIsometricTile) {
+			tiles.push(tile)
+		}
+	}
+
+	return tiles
+}
+
+const handlePlayerBounds = (player: Sprite) => {
+	let allowedDirection = [...allowedKeys]
+	const { row, col } = getChunkByGlobalPosition(player.x, player.y)
+
+	const currentChunk = getChunk(row, col)
+	if (!currentChunk) return allowedDirection
+
+	// Check player bounds on the ground tiles which has trees on the surface
+	const currentTiles = getAllActivePlayerTiles(currentChunk, player)
+
+	for (const tile of currentTiles) {
+		if (getVegetationFromGround(currentChunk, tile.label)) {
+			const collidedSides = getIsoCollisionSides(tile, player)
+
+			if (collidedSides['top-left']) {
+				allowedDirection = ['w', 'a']
+				break
+			}
+			if (collidedSides['top-right']) {
+				allowedDirection = ['w', 'd']
+				break
+			}
+			if (collidedSides['bottom-left']) {
+				allowedDirection = ['s', 'a']
+				break
+			}
+			if (collidedSides['bottom-right']) {
+				allowedDirection = ['s', 'd']
+				break
+			}
+			if (collidedSides['top']) {
+				allowedDirection = ['w', 'a', 'd']
+				break
+			}
+			if (collidedSides['bottom']) {
+				allowedDirection = ['s', 'a', 'd']
+				break
+			}
+		}
+	}
+
+	return allowedDirection
+}
+
+export const movePlayerPosition = (player: Sprite, world: Container, ticker: Ticker) => {
+	// We invert the momvent on the player to keep in in the center
+
+	const allowedDirection = handlePlayerBounds(player)
+	const distance = ticker.deltaTime * PLAYER_SPEED
+
+	if (playerMovementKeys.has('w') && allowedDirection.includes('w')) {
+		world.y += distance
+		player.y -= distance
+	}
+
+	if (playerMovementKeys.has('a') && allowedDirection.includes('a')) {
+		world.x += distance * 2
+		player.x -= distance * 2
+	}
+
+	if (playerMovementKeys.has('s') && allowedDirection.includes('s')) {
+		world.y -= distance
+		player.y += distance
+	}
+
+	if (playerMovementKeys.has('d') && allowedDirection.includes('d')) {
+		world.x -= distance * 2
+		player.x += distance * 2
+	}
+
+	animationTimer += ticker.deltaTime / 60
+	handlePlayeranimation(player)
 }

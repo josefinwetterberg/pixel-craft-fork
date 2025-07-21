@@ -1,10 +1,11 @@
 // @ts-ignore
 import { Noise } from 'noisejs'
 import { Sprite } from 'pixi.js'
-import { isoPosToWorldPos, TILE_HEIGHT } from './tiles'
+import { isoPosToWorldPos, TILE_HEIGHT, TILE_WIDTH_HALF } from './tiles'
 import { ASSETS } from './assets'
 import { SEED } from '../lib/utils/perlinNoise'
 import { isTileWater } from './water'
+import { Chunk } from '../types/tiles'
 
 type VegetationSpriteData = {
 	xPosTile: number
@@ -71,6 +72,13 @@ const getTextureFromPerlin = (perlin: number) => {
 	return ASSETS.VEGETATION.textures[textureKey]
 }
 
+const convertVegetationPosToGround = (x: number, y: number) => {
+	const newX = x - TILE_WIDTH_HALF
+	const newY = y - TILE_HEIGHT * 0.75
+
+	return { x: newX, y: newY }
+}
+
 export const createVegetationSprite = (data: VegetationSpriteData) => {
 	const { xPosTile, yPosTile, perlin, row, col } = data
 
@@ -87,14 +95,21 @@ export const createVegetationSprite = (data: VegetationSpriteData) => {
 
 	if (!textureData) return null
 
+	const labelPos = convertVegetationPosToGround(x, y)
+
 	const sprite = new Sprite({
 		texture: textureData,
 		width: textureData.width,
 		height: textureData.height,
 		x: x,
 		y: y,
-		anchor: { x: 0.5, y: 1 } // Trees root are always centered in assets there for we set the bottom center acnhor
+		anchor: { x: 0.5, y: 1 }, // Trees root are always centered in assets there for we set the bottom center acnhor
+		label: `${labelPos.x}_${labelPos.y}`
 	})
 
 	return sprite
+}
+
+export const getVegetationFromGround = (chunk: Chunk, label: string) => {
+	return chunk.vegetation?.getChildByLabel(label)
 }

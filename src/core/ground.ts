@@ -22,7 +22,8 @@ export const createGroundSprite = (data: GroundSpriteData) => {
 		width: TILE_WIDTH,
 		height: TILE_HEIGHT * 2, // Dubble the height since we have walls on some block but this does not effect the position only the texture
 		x: x,
-		y: y
+		y: y,
+		label: `${x}_${y}` // Adding the positino to the label so we can get tha same tile on the surface as well
 	})
 
 	if (ASSETS.BLOCKS) {

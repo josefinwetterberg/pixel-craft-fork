@@ -1,4 +1,4 @@
-import { Container } from 'pixi.js'
+import { Container, ContainerChild, Sprite } from 'pixi.js'
 import { Chunks, TileCallback } from '../types/tiles'
 import { getCellFromKey } from '../lib/utils/chunks'
 import { getPerlinNoise } from '../lib/utils/perlinNoise'
@@ -97,16 +97,24 @@ export const isoPosToWorldPos = (x: number, y: number) => {
 	return { x: xPos, y: yPos }
 }
 
+export const getChunkByGlobalPosition = (x: number, y: number) => {
+	const pos = isoPosToWorldPos(x, y)
+
+	const col = Math.floor(pos.x / CHUNK_SIZE)
+	const row = Math.floor(pos.y / CHUNK_SIZE)
+
+	return { row, col }
+}
+
+export const getChunk = (row: number, col: number) => {
+	return chunks.get(`${col}_${row}`)
+}
+
 export const getVisibleChunkKeys = (world: Container) => {
 	const keys: string[] = []
 
-	const worldX = -world.x
-	const worldY = -world.y
-
-	const { x, y } = isoPosToWorldPos(worldX, worldY)
-
-	const col = Math.floor(x / CHUNK_SIZE)
-	const row = Math.floor(y / CHUNK_SIZE)
+	// Inverting the world pos since we move the world the other way to simulate movement
+	const { row, col } = getChunkByGlobalPosition(-world.x, -world.y)
 
 	for (let chunkY = row - RENDER_DISTANCE; chunkY <= row + RENDER_DISTANCE; chunkY++) {
 		for (let chunkX = col - RENDER_DISTANCE; chunkX <= col + RENDER_DISTANCE; chunkX++) {
@@ -185,5 +193,21 @@ export const updateVisibleChunks = (world: Container, ground: Container, surface
 				surface.addChild(chunk.vegetation)
 			}
 		}
+	}
+}
+
+export const getIsoCollisionSides = (tile: ContainerChild, player: Sprite) => {
+	const cx = tile.x + TILE_WIDTH_HALF
+	const cy = tile.y + TILE_HEIGHT_HALF
+
+	// Before this function is called we alredy know that we have collided with the tile
+	// This function is to determin on what side we colided
+	return {
+		'top-left': player.x + player.width < cx && player.y < cy,
+		'bottom-left': player.x + player.width < cx && player.y > cy,
+		'bottom-right': player.x > cx && player.y > cy,
+		'top-right': player.x > cx && player.y < cy,
+		top: player.x + player.width > cx && player.y < cy,
+		bottom: player.x + player.width > cx && player.y > cy
 	}
 }

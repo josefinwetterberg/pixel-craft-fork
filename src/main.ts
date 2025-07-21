@@ -47,8 +47,8 @@ const init = async () => {
 
 	const player = createPlayer()
 	world.addChild(player)
-	window.addEventListener('keydown', (ev) => registerPlayerMovement(ev, player))
-	window.addEventListener('keyup', (ev) => removePlayerMovement(ev, player))
+	window.addEventListener('keydown', (ev) => registerPlayerMovement(ev.key, player))
+	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key, player))
 
 	app.ticker.add((ticker) => {
 		if (isPlayerMoving()) {
