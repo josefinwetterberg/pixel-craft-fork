@@ -1,7 +1,7 @@
 // @ts-ignore
 import { Noise } from 'noisejs'
 import { Sprite } from 'pixi.js'
-import { isoPosToWorldPos, TILE_HEIGHT, TILE_WIDTH_HALF } from './tiles'
+import { isoPosToWorldPos, TILE_HEIGHT, TILE_HEIGHT_HALF, TILE_WIDTH_HALF } from './tiles'
 import { ASSETS } from './assets'
 import { SEED } from '../lib/utils/perlinNoise'
 import { isTileWater } from './water'
@@ -72,7 +72,7 @@ const getTextureFromPerlin = (perlin: number) => {
 	return ASSETS.VEGETATION.textures[textureKey]
 }
 
-const convertVegetationPosToGround = (x: number, y: number) => {
+export const convertVegetationPosToGround = (x: number, y: number) => {
 	const newX = x - TILE_WIDTH_HALF
 	const newY = y - TILE_HEIGHT * 0.75
 
@@ -104,7 +104,8 @@ export const createVegetationSprite = (data: VegetationSpriteData) => {
 		x: x,
 		y: y,
 		anchor: { x: 0.5, y: 1 }, // Trees root are always centered in assets there for we set the bottom center acnhor
-		label: `${labelPos.x}_${labelPos.y}`
+		label: `${labelPos.x}_${labelPos.y}`,
+		zIndex: labelPos.y + TILE_HEIGHT_HALF
 	})
 
 	return sprite

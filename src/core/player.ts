@@ -17,7 +17,7 @@ import { getVegetationFromGround } from './vegetation'
 
 export const PLAYER_WIDTH = 32
 export const PLAYER_HEIGHT = 64
-export const PLAYER_SPEED = 3
+export const PLAYER_SPEED = 2
 const PLAYER_FRAME_LENGTH = 3
 
 const allowedKeys = ['w', 'a', 's', 'd']
@@ -93,7 +93,6 @@ export const createPlayer = () => {
 	player.y = y
 	player.width = PLAYER_WIDTH
 	player.height = PLAYER_HEIGHT
-	player.zIndex = 1
 
 	if (ASSETS.PLAYER) {
 		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
@@ -210,15 +209,16 @@ const handlePlayerBounds = (player: Sprite) => {
 	for (const [_, chunk] of chunks) {
 		if (!chunk.ground) continue
 
-		for (const tile of chunk.ground?.children) {
+		// Moving backwords since the actual first index is the furthest away visualy
+		const ground = chunk.ground.children
+		for (let i = ground.length - 1; i >= 0; i--) {
+			const tile = ground[i]
 			const currentVegetation = getVegetationFromGround(chunk, tile.label)
 
 			if (currentVegetation && isPlayerBehindItem(currentVegetation, tile, player)) {
 				currentVegetation.alpha = 0.4
-				currentVegetation.zIndex = 2
 			} else if (currentVegetation) {
 				currentVegetation.alpha = 1
-				currentVegetation.zIndex = 0
 			}
 
 			if (currentVegetation && currentTiles.includes(tile)) {
@@ -282,6 +282,8 @@ export const movePlayerPosition = (player: Sprite, world: Container, ticker: Tic
 		world.x -= distance * 2
 		player.x += distance * 2
 	}
+
+	player.zIndex = player.y
 
 	animationTimer += ticker.deltaTime / 60
 	handlePlayeranimation(player)
