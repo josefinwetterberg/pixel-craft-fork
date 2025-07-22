@@ -53,7 +53,7 @@ export const createTiles = (keys: string[]) => {
 			if (!chunks.has(key)) {
 				chunks.set(key, {
 					ground: new Container({ label: key, zIndex: currentRow + currentCol, cullable: true }),
-					vegetation: new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
+					surface: new Container({ label: key, zIndex: currentRow + currentCol, cullable: true })
 				})
 			}
 
@@ -62,7 +62,7 @@ export const createTiles = (keys: string[]) => {
 
 				const vegetationSprite = createVegetationSprite({ xPosTile, yPosTile, perlin, row, col })
 				if (vegetationSprite) {
-					chunks.get(key)?.vegetation?.addChild(vegetationSprite)
+					chunks.get(key)?.surface?.addChild(vegetationSprite)
 				}
 			}
 		})
@@ -106,18 +106,19 @@ export const getChunkByGlobalPosition = (x: number, y: number) => {
 	return { row, col }
 }
 
+export const getChunkByKey = (key: string) => {
+	return chunks.get(key)
+}
+
 export const getChunk = (row: number, col: number) => {
 	return chunks.get(`${col}_${row}`)
 }
 
-export const getVisibleChunkKeys = (world: Container) => {
+export const getVisibleChunkKeys = (row: number, col: number, area = RENDER_DISTANCE) => {
 	const keys: string[] = []
 
-	// Inverting the world pos since we move the world the other way to simulate movement
-	const { row, col } = getChunkByGlobalPosition(-world.x, -world.y)
-
-	for (let chunkY = row - RENDER_DISTANCE; chunkY <= row + RENDER_DISTANCE; chunkY++) {
-		for (let chunkX = col - RENDER_DISTANCE; chunkX <= col + RENDER_DISTANCE; chunkX++) {
+	for (let chunkY = row - area; chunkY <= row + area; chunkY++) {
+		for (let chunkX = col - area; chunkX <= col + area; chunkX++) {
 			keys.push(`${chunkX}_${chunkY}`)
 		}
 	}
@@ -140,19 +141,23 @@ export const getVisibleChunks = (keys: string[]) => {
 }
 
 export const setInitalTiles = (world: Container, ground: Container, surface: Container) => {
-	const keys = getVisibleChunkKeys(world)
+	// Inverting the world pos since we move the world the other way to simulate movement
+	const { row, col } = getChunkByGlobalPosition(-world.x, -world.y)
+	const keys = getVisibleChunkKeys(row, col)
 
 	const newChunkKeys = keys.filter((key) => !chunks.has(key))
 	createTiles(newChunkKeys)
 
 	for (const [_, chunk] of chunks) {
 		if (chunk.ground) ground.addChild(chunk.ground)
-		if (chunk.vegetation) surface.addChild(chunk.vegetation)
+		if (chunk.surface) surface.addChild(chunk.surface)
 	}
 }
 
 export const setNewChunksToRender = (world: Container) => {
-	const keys = getVisibleChunkKeys(world)
+	// Inverting the world pos since we move the world the other way to simulate movement
+	const { row, col } = getChunkByGlobalPosition(-world.x, -world.y)
+	const keys = getVisibleChunkKeys(row, col)
 	chunkCreationList = keys.filter((key) => !chunks.has(key) && !chunkCreationList.includes(key))
 }
 
@@ -166,7 +171,9 @@ export const createChunk = (key: string) => {
 }
 
 export const updateVisibleChunks = (world: Container, ground: Container, surface: Container) => {
-	const keys = getVisibleChunkKeys(world)
+	// Inverting the world pos since we move the world the other way to simulate movement
+	const { row, col } = getChunkByGlobalPosition(-world.x, -world.y)
+	const keys = getVisibleChunkKeys(row, col)
 
 	const visibleChunks = getVisibleChunks(keys)
 
@@ -189,8 +196,8 @@ export const updateVisibleChunks = (world: Container, ground: Container, surface
 				ground.addChild(chunk.ground)
 			}
 
-			if (chunk?.vegetation) {
-				surface.addChild(chunk.vegetation)
+			if (chunk?.surface) {
+				surface.addChild(chunk.surface)
 			}
 		}
 	}

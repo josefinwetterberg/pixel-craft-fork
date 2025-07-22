@@ -111,5 +111,5 @@ export const createVegetationSprite = (data: VegetationSpriteData) => {
 }
 
 export const getVegetationFromGround = (chunk: Chunk, label: string) => {
-	return chunk.vegetation?.getChildByLabel(label)
+	return chunk.surface?.getChildByLabel(label)
 }

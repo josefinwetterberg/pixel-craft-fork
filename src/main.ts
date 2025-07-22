@@ -11,6 +11,7 @@ import {
 	createPlayer,
 	isPlayerMoving,
 	movePlayerPosition,
+	putPlayerInChunk,
 	registerPlayerMovement,
 	removePlayerMovement
 } from './core/player'
@@ -46,7 +47,7 @@ const init = async () => {
 	world.addChild(ground, surface)
 
 	const player = createPlayer()
-	world.addChild(player)
+	putPlayerInChunk(player)
 	window.addEventListener('keydown', (ev) => registerPlayerMovement(ev.key, player))
 	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key, player))
 

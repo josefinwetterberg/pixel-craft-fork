@@ -3,8 +3,11 @@ import { ASSETS } from './assets'
 import {
 	getChunk,
 	getChunkByGlobalPosition,
+	getChunkByKey,
 	getIsoCollisionSides,
 	getIsometricTilePositions,
+	getVisibleChunkKeys,
+	getVisibleChunks,
 	isoPosToWorldPos,
 	TILE_HEIGHT_HALF,
 	TILE_WIDTH_HALF
@@ -24,6 +27,8 @@ let animationTimer = 0
 let currentFrame = 0
 let animationKey = 'down-center'
 const animationSpeed = 0.1
+
+let playerChunkKey = ''
 
 const getVerticleDirection = (verticle: string) => {
 	return verticle === 'w' ? 'up' : 'down'
@@ -88,6 +93,7 @@ export const createPlayer = () => {
 	player.y = y
 	player.width = PLAYER_WIDTH
 	player.height = PLAYER_HEIGHT
+	player.zIndex = 1
 
 	if (ASSETS.PLAYER) {
 		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
@@ -155,43 +161,93 @@ const getAllActivePlayerTiles = (chunk: Chunk, player: Sprite) => {
 	return tiles
 }
 
+const isPlayerBehindItem = (item: ContainerChild, groundTile: ContainerChild, player: Sprite) => {
+	// To place an item i.e vegetation on a tile but still allow the assets to display above the tile we set the anchor at bottom center
+	const itemLeft = item.x - item.width / 2
+	const itemRight = item.x + item.width / 2
+	const itemTop = item.y - item.height
+
+	const playerRight = player.x + player.width
+	const playerTop = player.y - player.height
+
+	const isRight = player.x < itemRight && player.x > itemLeft
+	const isLeft = playerRight > itemLeft && playerRight < itemRight
+	const isTop = player.y > itemTop && player.y < item.y
+	const isBottom = playerTop < item.y && playerTop > itemTop
+	const isAboveGroundTile = player.y < groundTile.y + TILE_HEIGHT_HALF
+
+	return isAboveGroundTile && (isRight || isLeft) && (isTop || isBottom)
+}
+
+export const putPlayerInChunk = (player: Sprite) => {
+	const { row, col } = getChunkByGlobalPosition(player.x, player.y)
+
+	const newChunk = getChunk(row, col)
+	const oldChunk = getChunkByKey(playerChunkKey)
+	if (!newChunk || !newChunk.surface) return
+	const newKey = newChunk.surface.label
+
+	if (newKey === oldChunk?.surface?.label) return
+
+	if (oldChunk?.surface) {
+		oldChunk.surface.removeChild(player)
+	}
+
+	newChunk.surface?.addChild(player)
+	playerChunkKey = newKey
+}
+
 const handlePlayerBounds = (player: Sprite) => {
 	let allowedDirection = [...allowedKeys]
 	const { row, col } = getChunkByGlobalPosition(player.x, player.y)
+	const keys = getVisibleChunkKeys(row, col)
+	const chunks = getVisibleChunks(keys)
 
-	const currentChunk = getChunk(row, col)
-	if (!currentChunk) return allowedDirection
+	const activeChunk = chunks.get(`${col}_${row}`)! // There will always be this chunk since this is the keys are based on
+	const currentTiles = getAllActivePlayerTiles(activeChunk, player)
 
-	// Check player bounds on the ground tiles which has trees on the surface
-	const currentTiles = getAllActivePlayerTiles(currentChunk, player)
+	// Including the chunks around the chunk that player is, since an surface item can have a part o fit covering in to a differnt chunk
+	for (const [_, chunk] of chunks) {
+		if (!chunk.ground) continue
 
-	for (const tile of currentTiles) {
-		if (getVegetationFromGround(currentChunk, tile.label)) {
-			const collidedSides = getIsoCollisionSides(tile, player)
+		for (const tile of chunk.ground?.children) {
+			const currentVegetation = getVegetationFromGround(chunk, tile.label)
 
-			if (collidedSides['top-left']) {
-				allowedDirection = ['w', 'a']
-				break
+			if (currentVegetation && isPlayerBehindItem(currentVegetation, tile, player)) {
+				currentVegetation.alpha = 0.4
+				currentVegetation.zIndex = 2
+			} else if (currentVegetation) {
+				currentVegetation.alpha = 1
+				currentVegetation.zIndex = 0
 			}
-			if (collidedSides['top-right']) {
-				allowedDirection = ['w', 'd']
-				break
-			}
-			if (collidedSides['bottom-left']) {
-				allowedDirection = ['s', 'a']
-				break
-			}
-			if (collidedSides['bottom-right']) {
-				allowedDirection = ['s', 'd']
-				break
-			}
-			if (collidedSides['top']) {
-				allowedDirection = ['w', 'a', 'd']
-				break
-			}
-			if (collidedSides['bottom']) {
-				allowedDirection = ['s', 'a', 'd']
-				break
+
+			if (currentVegetation && currentTiles.includes(tile)) {
+				const collidedSides = getIsoCollisionSides(tile, player)
+
+				if (collidedSides['top-left']) {
+					allowedDirection = ['w', 'a']
+					break
+				}
+				if (collidedSides['top-right']) {
+					allowedDirection = ['w', 'd']
+					break
+				}
+				if (collidedSides['bottom-left']) {
+					allowedDirection = ['s', 'a']
+					break
+				}
+				if (collidedSides['bottom-right']) {
+					allowedDirection = ['s', 'd']
+					break
+				}
+				if (collidedSides['top']) {
+					allowedDirection = ['w', 'a', 'd']
+					break
+				}
+				if (collidedSides['bottom']) {
+					allowedDirection = ['s', 'a', 'd']
+					break
+				}
 			}
 		}
 	}
@@ -202,6 +258,8 @@ const handlePlayerBounds = (player: Sprite) => {
 export const movePlayerPosition = (player: Sprite, world: Container, ticker: Ticker) => {
 	// We invert the momvent on the player to keep in in the center
 
+	// Put player in the correct chunk so zIndex will work on surface items
+	putPlayerInChunk(player)
 	const allowedDirection = handlePlayerBounds(player)
 	const distance = ticker.deltaTime * PLAYER_SPEED
 
