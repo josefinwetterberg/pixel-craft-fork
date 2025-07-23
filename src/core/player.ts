@@ -101,25 +101,15 @@ export const createPlayer = () => {
 	return player
 }
 
-export const registerPlayerMovement = (key: string, player: Sprite) => {
+export const registerPlayerMovement = (key: string) => {
 	if (allowedKeys.includes(key) && !playerMovementKeys.has(key)) {
 		playerMovementKeys.add(key)
-		animationKey = getPlayerAnimationKey(playerMovementKeys)
-		if (ASSETS.PLAYER) {
-			player.texture = ASSETS.PLAYER.animations[animationKey][0]
-			currentFrame = 0
-		}
 	}
 }
 
-export const removePlayerMovement = (key: string, player: Sprite) => {
+export const removePlayerMovement = (key: string) => {
 	if (allowedKeys.includes(key) && playerMovementKeys.has(key)) {
 		playerMovementKeys.delete(key)
-		animationKey = getPlayerAnimationKey(playerMovementKeys)
-		if (ASSETS.PLAYER) {
-			player.texture = ASSETS.PLAYER.animations[animationKey][0]
-			currentFrame = 0
-		}
 	}
 }
 
@@ -127,13 +117,26 @@ export const isPlayerMoving = () => {
 	return playerMovementKeys.size !== 0
 }
 
-const handlePlayeranimation = (player: Sprite) => {
+export const isPlayerStopping = () => {
+	return playerMovementKeys.size === 0 && currentFrame !== 0
+}
+
+const handlePlayerAnimation = (player: Sprite) => {
 	if (animationTimer >= animationSpeed && playerMovementKeys.size > 0) {
 		animationTimer = 0
 		currentFrame = (currentFrame + 1) % PLAYER_FRAME_LENGTH
+		animationKey = getPlayerAnimationKey(playerMovementKeys)
 		if (ASSETS.PLAYER) {
 			player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
 		}
+	}
+}
+
+export const setPlayerAnimationFrame = (player: Sprite, frame: number) => {
+	animationTimer = 0
+	currentFrame = frame
+	if (ASSETS.PLAYER) {
+		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
 	}
 }
 
@@ -286,5 +289,5 @@ export const movePlayerPosition = (player: Sprite, world: Container, ticker: Tic
 	player.zIndex = player.y
 
 	animationTimer += ticker.deltaTime / 60
-	handlePlayeranimation(player)
+	handlePlayerAnimation(player)
 }

@@ -10,10 +10,12 @@ import { loadAllinitialAssets } from './core/assets'
 import {
 	createPlayer,
 	isPlayerMoving,
+	isPlayerStopping,
 	movePlayerPosition,
 	putPlayerInChunk,
 	registerPlayerMovement,
-	removePlayerMovement
+	removePlayerMovement,
+	setPlayerAnimationFrame
 } from './core/player'
 import { handleWindowResize } from './lib/utils/window'
 
@@ -48,8 +50,8 @@ const init = async () => {
 
 	const player = createPlayer()
 	putPlayerInChunk(player)
-	window.addEventListener('keydown', (ev) => registerPlayerMovement(ev.key, player))
-	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key, player))
+	window.addEventListener('keydown', (ev) => registerPlayerMovement(ev.key))
+	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key))
 
 	app.ticker.add((ticker) => {
 		if (isPlayerMoving()) {
@@ -61,6 +63,8 @@ const init = async () => {
 			}
 
 			updateVisibleChunks(world, ground, surface)
+		} else if (isPlayerStopping()) {
+			setPlayerAnimationFrame(player, 0)
 		}
 
 		Culler.shared.cull(world, view)
