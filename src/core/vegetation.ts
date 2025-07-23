@@ -16,10 +16,20 @@ type VegetationSpriteData = {
 }
 
 const VEGETATION_NOISE = {
-	'oak-tree.png': 0.05
+	'dasiy.png': 0.08,
+	'oak-tree.png': 0.05,
+	'tall-grass.png': 0.2,
+	'short-grass.png': 0.3
 } as const
 
-const VEGETATION_DENSITY = 0.1
+const TREE_DENSITY = 0.03
+const PLANT_DENSITY = 0.1
+
+const collisions = ['oak-tree.png']
+
+export const hasVegetationCollisions = (vegetation: Sprite) => {
+	return collisions.includes(vegetation.texture.label ?? '')
+}
 
 const deterministicHash = (x: number, y: number, seed: number) => {
 	const PRIME_X = 374761393
@@ -59,10 +69,15 @@ export const generateVegetationNoise = (x: number, y: number) => {
 	return value
 }
 
-const getTextureFromPerlin = (perlin: number) => {
+const getTextureFromPerlin = (perlin: number, x: number, y: number) => {
 	let textureKey = ''
+	const shouldRender = deterministicHash(x, y, SEED)
+
 	for (const [key, value] of Object.entries(VEGETATION_NOISE)) {
-		if (perlin >= value) {
+		const isThree = key === 'oak-tree.png' && perlin <= value
+		const isPlant = key !== 'oak-tree.png' && perlin >= value
+
+		if ((isThree && shouldRender < TREE_DENSITY) || (isPlant && shouldRender < PLANT_DENSITY)) {
 			textureKey = key
 		}
 	}
@@ -82,8 +97,7 @@ export const convertVegetationPosToGround = (x: number, y: number) => {
 export const createVegetationSprite = (data: VegetationSpriteData) => {
 	const { xPosTile, yPosTile, perlin, row, col } = data
 
-	const shouldVegetationRender = deterministicHash(xPosTile, yPosTile, SEED)
-	if (isTileWater(perlin[row][col]) || shouldVegetationRender > VEGETATION_DENSITY) return null
+	if (isTileWater(perlin[row][col])) return null
 
 	const x = xPosTile
 	const y = yPosTile + TILE_HEIGHT * 0.75
@@ -91,7 +105,7 @@ export const createVegetationSprite = (data: VegetationSpriteData) => {
 	const worldPos = isoPosToWorldPos(xPosTile, yPosTile)
 
 	const vegetationNoise = generateVegetationNoise(worldPos.x, worldPos.y)
-	const textureData = getTextureFromPerlin(vegetationNoise)
+	const textureData = getTextureFromPerlin(vegetationNoise, xPosTile, yPosTile)
 
 	if (!textureData) return null
 

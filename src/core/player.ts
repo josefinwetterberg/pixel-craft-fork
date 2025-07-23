@@ -13,7 +13,7 @@ import {
 	TILE_WIDTH_HALF
 } from './tiles'
 import { Chunk } from '../types/tiles'
-import { getVegetationFromGround } from './vegetation'
+import { getVegetationFromGround, hasVegetationCollisions } from './vegetation'
 
 export const PLAYER_WIDTH = 32
 export const PLAYER_HEIGHT = 64
@@ -217,6 +217,11 @@ const handlePlayerBounds = (player: Sprite) => {
 		for (let i = ground.length - 1; i >= 0; i--) {
 			const tile = ground[i]
 			const currentVegetation = getVegetationFromGround(chunk, tile.label)
+			const hasCollisions = currentVegetation
+				? hasVegetationCollisions(currentVegetation as Sprite)
+				: false
+
+			if (!hasCollisions) continue
 
 			if (currentVegetation && isPlayerBehindItem(currentVegetation, tile, player)) {
 				currentVegetation.alpha = 0.4
