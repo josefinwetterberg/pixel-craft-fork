@@ -14,13 +14,20 @@ import {
 } from './tiles'
 import { Chunk } from '../types/tiles'
 import { getVegetationFromGround, hasVegetationCollisions } from './vegetation'
+import { generatePerlinNoise } from '../lib/utils/perlinNoise'
+import { isTileWater } from './water'
 
 export const PLAYER_WIDTH = 32
 export const PLAYER_HEIGHT = 64
-export const PLAYER_SPEED = 2
 const PLAYER_FRAME_LENGTH = 3
 
-const allowedKeys = ['w', 'a', 's', 'd']
+const DEFAULT_SPEED = 2
+export let PLAYER_SPEED = DEFAULT_SPEED
+const WATER_SPEED_REDUCTION = 1
+let playerIsInWater = false
+
+const allowedKeys = ['w', 'a', 's', 'd'] as const
+type AllowedKeys = (typeof allowedKeys)[number]
 const playerMovementKeys = new Set<string>([])
 
 let animationTimer = 0
@@ -39,6 +46,11 @@ const getHorizontalDirection = (horizontal: string) => {
 }
 
 const getPlayerAnimationKey = (keys: Set<string>) => {
+	// When player is created there is no keys that are active there for the early check
+	if (keys.size === 0 && playerIsInWater) {
+		return 'water-' + animationKey
+	}
+
 	// We only want to use the first and second key that is active if a users has three keys active we ignore it
 	if (keys.size > 2 || keys.size === 0) return animationKey
 
@@ -56,18 +68,24 @@ const getPlayerAnimationKey = (keys: Set<string>) => {
 		}
 	}
 
+	let key = ''
+
 	// Handle 1 key
 	if (keys.size === 1) {
-		if (vertical) return `${vertical}-center`
-		if (horizontal) return `${horizontal}-${horizontal}`
+		if (vertical) key = `${vertical}-center`
+		if (horizontal) key = `${horizontal}-${horizontal}`
 	}
 
 	// In the format of the spritesheet naming the verticle direction always comes first
 	if (vertical && horizontal) {
-		return `${vertical}-${horizontal}`
+		key = `${vertical}-${horizontal}`
 	}
 
-	return animationKey
+	if (playerIsInWater) {
+		key = 'water-' + key
+	}
+
+	return key
 }
 
 const centerPlayerToCenterTile = () => {
@@ -94,6 +112,9 @@ export const createPlayer = () => {
 	player.width = PLAYER_WIDTH
 	player.height = PLAYER_HEIGHT
 
+	handlePlayerInWater(player)
+	animationKey = getPlayerAnimationKey(playerMovementKeys)
+
 	if (ASSETS.PLAYER) {
 		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
 	}
@@ -101,14 +122,25 @@ export const createPlayer = () => {
 	return player
 }
 
+const isAllowedKey = (key: string): key is AllowedKeys => {
+	return allowedKeys.includes(key as AllowedKeys)
+}
+
 export const registerPlayerMovement = (key: string) => {
-	if (allowedKeys.includes(key) && !playerMovementKeys.has(key)) {
+	if (isAllowedKey(key) && !playerMovementKeys.has(key)) {
+		const opposites = { w: 's', s: 'w', a: 'd', d: 'a' }
+
+		// If we have to directions on the same axis it will mess with the animation key
+		if (playerMovementKeys.has(opposites[key])) {
+			removePlayerMovement(opposites[key])
+		}
+
 		playerMovementKeys.add(key)
 	}
 }
 
 export const removePlayerMovement = (key: string) => {
-	if (allowedKeys.includes(key) && playerMovementKeys.has(key)) {
+	if (isAllowedKey(key) && playerMovementKeys.has(key)) {
 		playerMovementKeys.delete(key)
 	}
 }
@@ -132,9 +164,14 @@ const handlePlayerAnimation = (player: Sprite) => {
 	}
 }
 
-export const setPlayerAnimationFrame = (player: Sprite, frame: number) => {
+export const setPlayerAnimation = (
+	player: Sprite,
+	key: string | null = animationKey,
+	frame: number | null = currentFrame
+) => {
 	animationTimer = 0
-	currentFrame = frame
+	currentFrame = frame ?? currentFrame
+	animationKey = key ?? animationKey
 	if (ASSETS.PLAYER) {
 		player.texture = ASSETS.PLAYER.animations[animationKey][currentFrame]
 	}
@@ -263,6 +300,38 @@ const handlePlayerBounds = (player: Sprite) => {
 	return allowedDirection
 }
 
+const isPlayerInWater = (player: Sprite) => {
+	let isWater = false
+
+	const positions = {
+		left: isoPosToWorldPos(player.x, player.y),
+		right: isoPosToWorldPos(player.x + player.width, player.y)
+	}
+
+	for (const [_, pos] of Object.entries(positions)) {
+		const noise = generatePerlinNoise(pos.x, pos.y)
+
+		if (isTileWater(noise)) {
+			isWater = true
+			break
+		}
+	}
+
+	return isWater
+}
+
+export const handlePlayerInWater = (player: Sprite) => {
+	const inWater = isPlayerInWater(player)
+
+	if (inWater && !playerIsInWater) {
+		playerIsInWater = true
+		PLAYER_SPEED = WATER_SPEED_REDUCTION
+	} else if (!inWater && playerIsInWater) {
+		playerIsInWater = false
+		PLAYER_SPEED = DEFAULT_SPEED
+	}
+}
+
 export const movePlayerPosition = (player: Sprite, world: Container, ticker: Ticker) => {
 	// We invert the momvent on the player to keep in in the center
 
@@ -291,6 +360,9 @@ export const movePlayerPosition = (player: Sprite, world: Container, ticker: Tic
 		player.x += distance * 2
 	}
 
+	handlePlayerInWater(player)
+
+	// To always be behind or infront of the right tree we have to adjust the zIndex depending on y axis
 	player.zIndex = player.y
 
 	animationTimer += ticker.deltaTime / 60

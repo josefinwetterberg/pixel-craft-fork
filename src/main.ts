@@ -15,7 +15,7 @@ import {
 	putPlayerInChunk,
 	registerPlayerMovement,
 	removePlayerMovement,
-	setPlayerAnimationFrame
+	setPlayerAnimation
 } from './core/player'
 import { handleWindowResize } from './lib/utils/window'
 
@@ -64,7 +64,7 @@ const init = async () => {
 
 			updateVisibleChunks(world, ground, surface)
 		} else if (isPlayerStopping()) {
-			setPlayerAnimationFrame(player, 0)
+			setPlayerAnimation(player, null, 0)
 		}
 
 		Culler.shared.cull(world, view)
