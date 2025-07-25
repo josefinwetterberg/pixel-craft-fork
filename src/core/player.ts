@@ -9,6 +9,7 @@ import {
 	getVisibleChunkKeys,
 	getVisibleChunks,
 	isoPosToWorldPos,
+	TILE_HEIGHT,
 	TILE_HEIGHT_HALF,
 	TILE_WIDTH_HALF
 } from './tiles'
@@ -24,6 +25,9 @@ const PLAYER_FRAME_LENGTH = 3
 const DEFAULT_SPEED = 2
 export let PLAYER_SPEED = DEFAULT_SPEED
 const WATER_SPEED_REDUCTION = 1
+// Diffrent water position if comming in or out from top or bottom of lakes since top you see the side of the ground but not on the bottom of lakes there for we move the player diffrently
+const PLAYER_WATER_Y_POS_TOP = TILE_HEIGHT
+const PLAYER_WATER_Y_POS_BOTTOM = TILE_HEIGHT_HALF
 let playerIsInWater = false
 
 const allowedKeys = ['w', 'a', 's', 'd'] as const
@@ -101,7 +105,7 @@ const centerPlayerToCenterTile = () => {
 	}
 }
 
-export const createPlayer = () => {
+export const createPlayer = (world: Container) => {
 	const { x, y } = centerPlayerToCenterTile()
 
 	const player = new Sprite()
@@ -112,7 +116,7 @@ export const createPlayer = () => {
 	player.width = PLAYER_WIDTH
 	player.height = PLAYER_HEIGHT
 
-	handlePlayerInWater(player)
+	handlePlayerInWater(player, world)
 	animationKey = getPlayerAnimationKey(playerMovementKeys)
 
 	if (ASSETS.PLAYER) {
@@ -300,35 +304,67 @@ const handlePlayerBounds = (player: Sprite) => {
 	return allowedDirection
 }
 
+export const movePlayerTo = (x: number, y: number, world: Container, player: Sprite) => {
+	const xDiff = world.x - x
+	const yDiff = world.y - y
+
+	world.y += yDiff
+	world.x += xDiff
+
+	player.y -= yDiff
+	player.x -= xDiff
+}
+
+/**
+ * When in water top line hits before bottom meaning nort collision move player
+ * When in water and bottom line hits before meaning soulth collision move player
+ * When on ground and bottom line hits before meaing north entring water move player
+ * When on ground and top line hits first meaning soulth entering water move player
+ */
+
 const isPlayerInWater = (player: Sprite) => {
-	let isWater = false
+	let isWater: Record<string, any> = {}
+
+	const topLineYPos = playerIsInWater
+		? player.y - PLAYER_WATER_Y_POS_TOP
+		: player.y - PLAYER_WATER_Y_POS_BOTTOM
 
 	const positions = {
-		left: isoPosToWorldPos(player.x, player.y),
-		right: isoPosToWorldPos(player.x + player.width, player.y)
+		'top-left': isoPosToWorldPos(player.x, topLineYPos),
+		'top-right': isoPosToWorldPos(player.x + player.width, topLineYPos),
+		'bottom-left': isoPosToWorldPos(player.x, player.y),
+		'bottom-right': isoPosToWorldPos(player.x + player.width, player.y)
 	}
 
-	for (const [_, pos] of Object.entries(positions)) {
+	for (const [key, pos] of Object.entries(positions)) {
 		const noise = generatePerlinNoise(pos.x, pos.y)
 
-		if (isTileWater(noise)) {
-			isWater = true
-			break
-		}
+		const [line] = key.split('-')
+		isWater[line] = isTileWater(noise)
 	}
 
 	return isWater
 }
 
-export const handlePlayerInWater = (player: Sprite) => {
-	const inWater = isPlayerInWater(player)
+export const handlePlayerInWater = (player: Sprite, world: Container) => {
+	const { top, bottom } = isPlayerInWater(player)
 
-	if (inWater && !playerIsInWater) {
+	if (top && !playerIsInWater) {
 		playerIsInWater = true
 		PLAYER_SPEED = WATER_SPEED_REDUCTION
-	} else if (!inWater && playerIsInWater) {
+		movePlayerTo(world.x, world.y - PLAYER_WATER_Y_POS_BOTTOM, world, player)
+	} else if (!bottom && playerIsInWater) {
 		playerIsInWater = false
 		PLAYER_SPEED = DEFAULT_SPEED
+		movePlayerTo(world.x, world.y + PLAYER_WATER_Y_POS_BOTTOM, world, player)
+	} else if (bottom && !playerIsInWater) {
+		playerIsInWater = true
+		PLAYER_SPEED = WATER_SPEED_REDUCTION
+		movePlayerTo(world.x, world.y + PLAYER_WATER_Y_POS_TOP, world, player)
+	} else if (!top && playerIsInWater) {
+		playerIsInWater = false
+		PLAYER_SPEED = DEFAULT_SPEED
+		movePlayerTo(world.x, world.y - PLAYER_WATER_Y_POS_TOP, world, player)
 	}
 }
 
@@ -360,7 +396,7 @@ export const movePlayerPosition = (player: Sprite, world: Container, ticker: Tic
 		player.x += distance * 2
 	}
 
-	handlePlayerInWater(player)
+	handlePlayerInWater(player, world)
 
 	// To always be behind or infront of the right tree we have to adjust the zIndex depending on y axis
 	player.zIndex = player.y

@@ -48,7 +48,7 @@ const init = async () => {
 	setInitalTiles(world, ground, surface)
 	world.addChild(ground, surface)
 
-	const player = createPlayer()
+	const player = createPlayer(world)
 	putPlayerInChunk(player)
 	window.addEventListener('keydown', (ev) => registerPlayerMovement(ev.key))
 	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key))
