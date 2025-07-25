@@ -4,6 +4,7 @@ import {
 	createChunk,
 	setInitalTiles,
 	setNewChunksToRender,
+	setRenderDistance,
 	updateVisibleChunks
 } from './core/tiles'
 import { loadAllinitialAssets } from './core/assets'
@@ -32,6 +33,7 @@ const init = async () => {
 	// @ts-ignore
 	globalThis.__PIXI_APP__ = app
 
+	setRenderDistance()
 	await loadAllinitialAssets()
 
 	const world = new Container({
@@ -71,7 +73,7 @@ const init = async () => {
 	})
 
 	window.addEventListener('resize', () => {
-		handleWindowResize(world)
+		handleWindowResize(world, ground, surface)
 
 		view = new Rectangle(0, 0, window.innerWidth, window.innerHeight)
 	})

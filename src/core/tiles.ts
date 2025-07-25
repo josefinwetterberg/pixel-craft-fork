@@ -13,12 +13,18 @@ export const TILE_HEIGHT_HALF = TILE_HEIGHT / 2
 export const CHUNK_SIZE = 16
 export const CHUNK_WIDTH = CHUNK_SIZE * TILE_WIDTH
 export const CHUNK_HEIGHT = CHUNK_SIZE * TILE_HEIGHT
-export const RENDER_DISTANCE = 4
+export let RENDER_DISTANCE = 4
 const MAX_STORED_CHUNKS = RENDER_DISTANCE * RENDER_DISTANCE * 16
 
 let chunks: Chunks = new Map()
 export let chunkCreationList: string[] = []
 let currentChunk = ''
+
+export const setRenderDistance = () => {
+	const width = window.innerWidth
+	const chunkPadding = 2 // We want some extra chunks around the chunks that can fit in the screen so there is no void in the corners
+	RENDER_DISTANCE = Math.ceil(width / (CHUNK_SIZE * TILE_WIDTH_HALF)) + chunkPadding
+}
 
 export const loopTiles = <T>(width: number, height: number, callback: TileCallback<T>): T[] => {
 	const results: T[] = []
