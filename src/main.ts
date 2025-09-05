@@ -68,6 +68,20 @@ const init = async () => {
 		informationDiv.style.fontFamily = 'Arial, sans-serif'
 		informationDiv.style.zIndex = '1000'
 		document.body.appendChild(informationDiv)
+
+		const closeButton = document.createElement('span')
+		closeButton.textContent = 'x'
+		closeButton.style.position = 'absolute'
+		closeButton.style.top = '5px'
+		closeButton.style.right = '8px'
+		closeButton.style.cursor = 'pointer'
+		closeButton.style.fontWeight = 'bold'
+		closeButton.style.fontSize = '18px'
+		closeButton.style.color = '#333'
+
+		informationDiv.appendChild(closeButton)
+
+		document.body.appendChild(informationDiv)
 	}
 
 	addInformation()
