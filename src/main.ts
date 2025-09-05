@@ -58,7 +58,7 @@ const init = async () => {
 	function addInformation() {
 		const informationDiv = document.createElement('div')
 		informationDiv.textContent =
-			"To move around use the keys 'W', 'A', 'S', and 'D'. Have fun exploring!"
+			"To move around use the keys 'W', 'A', 'S', 'D'. Have fun exploring!"
 		informationDiv.style.position = 'absolute'
 		informationDiv.style.top = '10px'
 		informationDiv.style.left = '10px'
@@ -67,13 +67,13 @@ const init = async () => {
 		informationDiv.style.borderRadius = '5px'
 		informationDiv.style.fontFamily = 'Arial, sans-serif'
 		informationDiv.style.zIndex = '1000'
-		document.body.appendChild(informationDiv)
+		informationDiv.style.maxWidth = '370px'
 
 		const closeButton = document.createElement('span')
 		closeButton.textContent = 'x'
 		closeButton.style.position = 'absolute'
 		closeButton.style.top = '5px'
-		closeButton.style.right = '8px'
+		closeButton.style.right = '10px'
 		closeButton.style.cursor = 'pointer'
 		closeButton.style.fontWeight = 'bold'
 		closeButton.style.fontSize = '18px'
