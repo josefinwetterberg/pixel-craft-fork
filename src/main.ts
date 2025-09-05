@@ -79,6 +79,10 @@ const init = async () => {
 		closeButton.style.fontSize = '18px'
 		closeButton.style.color = '#333'
 
+		closeButton.addEventListener('click', () => {
+			informationDiv.remove()
+		})
+
 		informationDiv.appendChild(closeButton)
 
 		document.body.appendChild(informationDiv)
