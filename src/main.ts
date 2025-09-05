@@ -56,20 +56,21 @@ const init = async () => {
 	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key))
 
 	function addInformation() {
-		const informationDiv = document.createElement("div");
-		informationDiv.textContent = "To move around use the keys 'W', 'A', 'S', and 'D'. Have fun exploring!";
-		informationDiv.style.position = "absolute";
-		informationDiv.style.top = "10px";
-		informationDiv.style.left = "10px";
-		informationDiv.style.backgroundColor = "white";
-		informationDiv.style.padding = "10px";
-		informationDiv.style.borderRadius = "5px";
-		informationDiv.style.fontFamily = "Arial, sans-serif";
-		document.body.appendChild(informationDiv);
+		const informationDiv = document.createElement('div')
+		informationDiv.textContent =
+			"To move around use the keys 'W', 'A', 'S', and 'D'. Have fun exploring!"
+		informationDiv.style.position = 'absolute'
+		informationDiv.style.top = '10px'
+		informationDiv.style.left = '10px'
+		informationDiv.style.backgroundColor = 'white'
+		informationDiv.style.padding = '10px 30px 10px 10px'
+		informationDiv.style.borderRadius = '5px'
+		informationDiv.style.fontFamily = 'Arial, sans-serif'
+		informationDiv.style.zIndex = '1000'
+		document.body.appendChild(informationDiv)
 	}
 
 	addInformation()
-
 
 	app.ticker.add((ticker) => {
 		if (isPlayerMoving()) {
