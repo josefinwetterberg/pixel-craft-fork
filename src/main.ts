@@ -56,20 +56,39 @@ const init = async () => {
 	window.addEventListener('keyup', (ev) => removePlayerMovement(ev.key))
 
 	function addInformation() {
-		const informationDiv = document.createElement("div");
-		informationDiv.textContent = "To move around use the keys 'W', 'A', 'S', and 'D'. Have fun exploring!";
-		informationDiv.style.position = "absolute";
-		informationDiv.style.top = "10px";
-		informationDiv.style.left = "10px";
-		informationDiv.style.backgroundColor = "white";
-		informationDiv.style.padding = "10px";
-		informationDiv.style.borderRadius = "5px";
-		informationDiv.style.fontFamily = "Arial, sans-serif";
-		document.body.appendChild(informationDiv);
+		const informationDiv = document.createElement('div')
+		informationDiv.textContent =
+			"To move around use the keys 'W', 'A', 'S', 'D'. Have fun exploring!"
+		informationDiv.style.position = 'absolute'
+		informationDiv.style.top = '10px'
+		informationDiv.style.left = '10px'
+		informationDiv.style.backgroundColor = 'white'
+		informationDiv.style.padding = '10px 30px 10px 10px'
+		informationDiv.style.borderRadius = '5px'
+		informationDiv.style.fontFamily = 'Arial, sans-serif'
+		informationDiv.style.zIndex = '1000'
+		informationDiv.style.maxWidth = '370px'
+
+		const closeButton = document.createElement('span')
+		closeButton.textContent = 'x'
+		closeButton.style.position = 'absolute'
+		closeButton.style.top = '5px'
+		closeButton.style.right = '10px'
+		closeButton.style.cursor = 'pointer'
+		closeButton.style.fontWeight = 'bold'
+		closeButton.style.fontSize = '18px'
+		closeButton.style.color = '#333'
+
+		closeButton.addEventListener('click', () => {
+			informationDiv.remove()
+		})
+
+		informationDiv.appendChild(closeButton)
+
+		document.body.appendChild(informationDiv)
 	}
 
 	addInformation()
-
 
 	app.ticker.add((ticker) => {
 		if (isPlayerMoving()) {
